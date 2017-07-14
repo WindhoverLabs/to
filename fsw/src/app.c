@@ -47,9 +47,11 @@ extern "C" {
 #include "to_platform_cfg.h"
 #include "events.h"
 #include "version.h"
+#include "to_msgids.h"
+#include "to_perfids.h"
 #include <termio.h>
 #include <stdlib.h>
-#include "sch_api.h"
+//#include "sch_api.h"
 
 /*
 ** Local Defines
@@ -367,7 +369,7 @@ void TO_ProcessSchMsg(void)
     		/* Ouput Telemetry */
     		TO_SendTlm_t *msg = (TO_SendTlm_t *)TO_AppData.MsgPtr;
             TO_ForwardTelemetry(msg->PrioMask);
-            SCH_ActivityComplete(TO_SEND_TLM_MID);
+            //SCH_ActivityComplete(TO_SEND_TLM_MID);
             break;
     	}
 
