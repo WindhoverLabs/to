@@ -21,6 +21,12 @@
 #include "to_events.h"
 #include "to_config_utils.h"
 #include "to_cds_utils.h"
+#include "to_message_flow.h"
+#include "to_classifier.h"
+#include "to_priority_queue.h"
+#include "to_scheduler.h"
+#include "to_output_channel.h"
+#include "to_custom.h"
 
 #ifdef __cplusplus
 extern "C" {

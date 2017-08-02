@@ -12,6 +12,9 @@
 #include "cfe.h"
 #include "to_mission_cfg.h"
 #include "to_platform_cfg.h"
+#include "to_message_flow.h"
+#include "to_priority_queue.h"
+#include "to_output_channel.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,61 +38,10 @@ extern "C" {
  */
 #define TO_CDS_TABLENAME  ("to_CdsTbl")
 
-typedef enum
-{
-	TO_PQUEUE_UNUSED = 0,
-	TO_PQUEUE_ENA = 1,
-} TO_PriorityQueueState_t;
-
-typedef enum
-{
-	TO_OUT_CHANNEL_UNUSED = 0,
-	TO_OUT_CHANNEL_ENA = 1,
-} TO_OutputChannelState_t;
-
-typedef enum
-{
-	TO_PRIORITY_QUEUE_TYPE_FIFO = 0,
-	TO_PRIORITY_QUEUE_TYPE_SINGLE,
-} TO_PriorityQueueType_t;
 
 /************************************************************************
 ** Local Structure Declarations
 *************************************************************************/
-
-/** \brief Definition for a single telemetry message flow entry. */
-typedef struct
-{
-    CFE_SB_MsgId_t  MsgId;
-    uint16          MsgLimit;
-    uint16			PQueueID;
-    uint16          MinSize;
-    uint16			DroppedMsgCnt;
-    uint16			TotalQueuedMsgCnt;
-    uint16			CurrentQueuedMsgCnt;
-    uint32          TxCount;
-} TO_TlmMessageFlow_t;
-
-/** \brief Definition for a single priority queue entry. */
-typedef struct
-{
-	TO_PriorityQueueState_t State;
-	uint16					ChannelID;
-	uint16					MsgLimit;
-	TO_PriorityQueueType_t  QType;
-	uint16					DroppedMsgCnt;
-    uint32					OSALQueueID;
-} TO_TlmPriorityQueue_t;
-
-/** \brief Definition for a single priority queue entry. */
-typedef struct
-{
-	TO_OutputChannelState_t State;
-	uint16					MsgLimit;
-	uint16					QueuedCount;
-	uint16					DroppedMsgCnt;
-    uint32					OSALQueueID;
-} TO_TlmOutputChannelQueue_t;
 
 
 /* TODO:  Add doxygen markup. */

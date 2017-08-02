@@ -196,6 +196,9 @@ typedef enum {
 	TO_CR_POOL_ERR_EID,
 	TO_GET_POOL_ERR_EID,
 	TO_TLM_LISTEN_ERR_EID,
+	TO_MSG_FLOW_INFO_EID,
+	TO_PQUEUE_INFO_EID,
+	TO_OUT_CH_INFO_EID,
 
 /** \brief <tt> This is a count of all the app events and should not be used. </tt> */
     TO_EVT_CNT

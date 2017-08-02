@@ -14,14 +14,12 @@
 #include "to_msg.h"
 #include "to_version.h"
 #include "to_platform_cfg.h"
-#include "to_custom.h"
+#include "to_message_flow.h"
 #include "to_classifier.h"
+#include "to_priority_queue.h"
 #include "to_scheduler.h"
-
-/* TODO:  The following include  is for the temporary functions.  Remove this include when CATS hardware is
- * available.
- */
-#include "resolv.h"
+#include "to_output_channel.h"
+#include "to_custom.h"
 
 /************************************************************************
 ** Local Defines
@@ -285,10 +283,12 @@ int32 TO_InitApp()
         goto TO_InitApp_Exit_Tag;
     }
 
-    iStatus = TO_InitCustom();
+    iStatus = TO_OutputChannel_InitAll();
     if (iStatus != CFE_SUCCESS)
     {
-        CFE_ES_WriteToSysLog("TO - InitCustom failed (%i)\n", (int)iStatus);
+    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+            "Failed to init Output Channels (0x%08X)",
+            (unsigned int)iStatus);
         goto TO_InitApp_Exit_Tag;
     }
 
@@ -336,7 +336,10 @@ TO_InitApp_Exit_Tag:
 
 void TO_CleanupCallback()
 {
-    TO_CleanupCustom();
+	TO_MessageFlow_TeardownAll();
+	TO_PriorityQueue_TeardownAll();
+	TO_OutputChannel_TeardownAll();
+	TO_OutputChannel_CustomCleanupAll();
 }
 
 
@@ -499,15 +502,76 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
                 TO_AppData.HkTlm.usCmdErrCnt = 0;
                 TO_AppData.HkTlm.usTotalMsgDropped = 0;
                 TO_AppData.HkTlm.usNoSerFuncCnt = 0;
+                TO_MessageFlow_ResetCountsAll();
+                TO_PriorityQueue_ResetCountsAll();
+                TO_OutputChannel_ResetCountsAll();
 
                 (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
                                   "Recvd RESET cmd (%u)", (unsigned int)uiCmdCode);
                 break;
 
+            case TO_ADD_MESSAGE_CC:
+                (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "Recvd ADD_MESSAGE cmd (%u)", (unsigned int)uiCmdCode);
+            	break;
+
+            case TO_REMOVE_MESSAGE_CC:
+                (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "Recvd REMOVE_MESSGE cmd (%u)", (unsigned int)uiCmdCode);
+            	break;
+
+            case TO_QUERY_MESSAGE_FLOW_CC:
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryMessageFlowCmd_t)))
+            	{
+            		TO_QueryMessageFlowCmd_t *cmd = (TO_QueryMessageFlowCmd_t*)MsgPtr;
+
+            		if(TO_MessageFlow_Query(cmd->MsgID) == FALSE)
+            		{
+            			TO_AppData.HkTlm.usCmdErrCnt++;
+            		}
+            		else
+            		{
+            			TO_AppData.HkTlm.usCmdCnt++;
+            		}
+            	}
+            	break;
+
+            case TO_QUERY_PRIORITY_QUEUE_CC:
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryPriorityQueueCmd_t)))
+            	{
+            		TO_QueryPriorityQueueCmd_t *cmd = (TO_QueryPriorityQueueCmd_t*)MsgPtr;
+
+            		if(TO_PriorityQueue_Query(cmd->PQueueIndex) == FALSE)
+            		{
+            			TO_AppData.HkTlm.usCmdErrCnt++;
+            		}
+            		else
+            		{
+            			TO_AppData.HkTlm.usCmdCnt++;
+            		}
+            	}
+            	break;
+
+            case TO_QUERY_OUTPUT_CHANNEL_CC:
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryOutputChannelCmd_t)))
+            	{
+            		TO_QueryOutputChannelCmd_t *cmd = (TO_QueryOutputChannelCmd_t*)MsgPtr;
+
+            		if(TO_OutputChannel_Query(cmd->OutputChannelIndex) == FALSE)
+            		{
+            			TO_AppData.HkTlm.usCmdErrCnt++;
+            		}
+            		else
+            		{
+            			TO_AppData.HkTlm.usCmdCnt++;
+            		}
+            	}
+            	break;
+
             /* TODO:  Add code to process the rest of the TO commands here */
 
             default:
-            	TO_ProcessNewCustomCmds(MsgPtr);
+            	TO_OutputChannel_ProcessNewCustomCmds(MsgPtr);
                 break;
         }
     }
@@ -539,8 +603,8 @@ void TO_ReportHousekeeping()
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_ProcessTelemetry()
 {
-	TO_RunClassifier();
-	TO_RunScheduler();
+	TO_Classifier_Run();
+	TO_Scheduler_Run();
 }
 
 

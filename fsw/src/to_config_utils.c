@@ -129,221 +129,23 @@ int32 TO_ProcessNewConfigTbl()
 	uint32 i = 0;
 	int32 iStatus = 0;
 
-    /* We need to release all the resources and return the system back to its
-     * initialization state. First, clear all the message flows by unsubscribing from all
-	 * messages.
-	 */
-	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	{
-		if(TO_AppData.Config.MessageFlow[i].MsgId != 0)
-		{
-			/* Unsubscribe from message. */
-			iStatus =  CFE_SB_Unsubscribe(
-					TO_AppData.Config.MessageFlow[i].MsgId,
-					TO_AppData.DataPipeId);
-			if (iStatus != CFE_SUCCESS)
-			{
-				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-						"Message flow failed to unsubscribe from 0x%08X. (%i)",
-						TO_AppData.Config.MessageFlow[i].MsgId,
-						(unsigned int)iStatus);
-				goto end_of_function;
-			}
-		}
-	}
-
-	/* Next, pop all the messages off each priority queue so we can return
-	 * each message memory allocation back to the memory pool, then delete
-	 * the queue.
-	 */
-	for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
-	{
-		if(TO_AppData.Config.PriorityQueue[i].State != TO_PQUEUE_UNUSED)
-		{
-			if(TO_AppData.Config.PriorityQueue[i].OSALQueueID !=0)
-			{
-				CFE_SB_MsgPtr_t  msgPtr = 0;
-				uint32 msgSize = 0;
-				while(iStatus == OS_SUCCESS)
-				{
-					iStatus =  OS_QueueGet(
-							TO_AppData.Config.PriorityQueue[i].OSALQueueID,
-							&msgPtr, sizeof(msgPtr), &msgSize, OS_CHECK);
-					if(iStatus == OS_SUCCESS)
-					{
-						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)msgPtr);
-						if(iStatus != OS_SUCCESS)
-						{
-							(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-									"Failed to return message back to memory pool on tbl load. (%i)",
-									(unsigned int)iStatus);
-							goto end_of_function;
-						}
-					}
-				}
-				if(iStatus != OS_QUEUE_EMPTY)
-				{
-					(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-							"Message flow failed to pop all messages from pqueue %u. (%i)",
-							(unsigned int)i,
-							(unsigned int)iStatus);
-					goto end_of_function;
-				}
-				else
-				{
-					/* Queue is empty.  Delete the queue. */
-					iStatus = OS_QueueDelete(
-							TO_AppData.Config.PriorityQueue[i].OSALQueueID);
-					if(iStatus != OS_SUCCESS)
-					{
-						(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-								"Failed to delete priority queue %u. (%i)",
-								(unsigned int)i,
-								(unsigned int)iStatus);
-						goto end_of_function;
-					}
-				}
-			}
-		}
-	}
-
-	/* Pop all the messages off each channel queue so we can return
-	 * each message memory allocation back to the memory pool, then delete
-	 * the queue.
-	 */
-	for(i=0; i < TO_MAX_OUTPUT_CHANNELS; ++i)
-	{
-		if(TO_AppData.Config.OutputChannel[i].State != TO_PQUEUE_UNUSED)
-		{
-			if(TO_AppData.Config.OutputChannel[i].OSALQueueID !=0)
-			{
-				CFE_SB_MsgPtr_t  msgPtr = 0;
-				uint32 msgSize = 0;
-				while(iStatus == OS_SUCCESS)
-				{
-					iStatus =  OS_QueueGet(
-							TO_AppData.Config.OutputChannel[i].OSALQueueID,
-							&msgPtr, sizeof(msgPtr), &msgSize, OS_CHECK);
-					if(iStatus == OS_SUCCESS)
-					{
-						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)msgPtr);
-						if(iStatus != OS_SUCCESS)
-						{
-							(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-									"Failed to return message back to memory pool on tbl load. (%i)",
-									(unsigned int)iStatus);
-							goto end_of_function;
-						}
-					}
-				}
-				if(iStatus != OS_QUEUE_EMPTY)
-				{
-					(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-							"Message flow failed to pop all messages from queue %u. (%i)",
-							(unsigned int)i,
-							(unsigned int)iStatus);
-					goto end_of_function;
-				}
-				else
-				{
-					/* Queue is empty.  Delete the queue. */
-					iStatus = OS_QueueDelete(
-							TO_AppData.Config.OutputChannel[i].OSALQueueID);
-					if(iStatus != OS_SUCCESS)
-					{
-						(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-								"Failed to delete priority queue %u. (%i)",
-								(unsigned int)i,
-								(unsigned int)iStatus);
-						goto end_of_function;
-					}
-				}
-			}
-		}
-	}
+	/* First, tear down the current configuration. */
+    TO_MessageFlow_TeardownAll();
+    TO_PriorityQueue_TeardownAll();
+    TO_OutputChannel_TeardownAll();
 
 	/* Now copy the new table in so we can release the table pointer back to
 	 * the system.
 	 */
 	memcpy(&TO_AppData.Config, TO_AppData.ConfigTblPtr, sizeof(TO_AppData.Config));
 
-    /*
-     * Now that we have the new table, create all the new resources we need
-     * starting with queues for the channels and priority queues.
-     */
-    for(i=0; i < TO_MAX_OUTPUT_CHANNELS; ++i)
-    {
-    	if(TO_AppData.Config.OutputChannel[i].State != TO_OUT_CHANNEL_UNUSED)
-    	{
-			char QueueName[OS_MAX_API_NAME];
-			snprintf(QueueName, OS_MAX_API_NAME, "TO_CH_%u", (unsigned int)i);
-			iStatus = OS_QueueCreate(
-					&TO_AppData.Config.OutputChannel[i].OSALQueueID,
-					QueueName,
-					TO_AppData.Config.OutputChannel[i].MsgLimit,
-					sizeof(CFE_SB_Msg_t*),
-					0);
-			if (iStatus != OS_SUCCESS)
-			{
-				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-										 "Failed to create output channel queue. (%i)",
-										 (unsigned int)iStatus);
-				goto end_of_function;
-
-			}
-    	}
-    }
-
-    /*
-     * Create the priority queues.
-     */
-    for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
-    {
-    	if(TO_AppData.Config.PriorityQueue[i].State != TO_PQUEUE_UNUSED)
-    	{
-			char QueueName[OS_MAX_API_NAME];
-			snprintf(QueueName, OS_MAX_API_NAME, "TO_PQ_%u", (unsigned int)i);
-			iStatus = OS_QueueCreate(
-					&TO_AppData.Config.PriorityQueue[i].OSALQueueID,
-					QueueName,
-					TO_AppData.Config.OutputChannel[i].MsgLimit,
-					sizeof(CFE_SB_Msg_t*),
-					0);
-			if (iStatus != OS_SUCCESS)
-			{
-				 (void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-										  "Failed to create priority queue. (%i)",
-										  (unsigned int)iStatus);
-				 goto end_of_function;
-
-			}
-    	}
-    }
-
-    /*
-     * Create message flows by subscribing to messages.
-     */
-	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	{
-		if(TO_AppData.Config.MessageFlow[i].MsgId != 0)
-		{
-			/* Subscribe to message. */
-			iStatus = CFE_SB_SubscribeEx(TO_AppData.Config.MessageFlow[i].MsgId, TO_AppData.DataPipeId,
-										 CFE_SB_Default_Qos, TO_AppData.Config.MessageFlow[i].MsgLimit);
-			if (iStatus != CFE_SUCCESS)
-			{
-				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-						"Message flow failed to subscribe to (0x%08X). (%i)",
-						TO_AppData.Config.MessageFlow[i].MsgId,
-						(unsigned int)iStatus);
-				goto end_of_function;
-			}
-		}
-	}
+	/* Now, build up the new configuration. */
+	TO_MessageFlow_BuildupAll();
+	TO_PriorityQueue_BuildupAll();
+	TO_OutputChannel_BuildupAll();
 
 end_of_function:
     return iStatus;
-
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
