@@ -36,6 +36,7 @@ int32 TO_PriorityQueue_BuildupAll(void);
 int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* PQueue);
 int32 TO_PriorityQueue_TeardownAll(void);
 boolean TO_PriorityQueue_Query(uint16 PQueueIdx);
+boolean TO_PriorityQueue_IsValid(uint32 PQueueIdx);
 
 
 #endif

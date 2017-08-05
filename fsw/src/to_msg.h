@@ -89,8 +89,8 @@ extern "C" {
 #define TO_RESET_CC                (1)
 
 
-#define TO_ADD_MESSAGE_CC          (2)
-#define TO_REMOVE_MESSAGE_CC       (3)
+#define TO_ADD_MESSAGE_FLOW_CC     (2)
+#define TO_REMOVE_MESSAGE_FLOW_CC  (3)
 #define TO_QUERY_MESSAGE_FLOW_CC   (4)
 #define TO_QUERY_PRIORITY_QUEUE_CC (5)
 #define TO_QUERY_OUTPUT_CHANNEL_CC (6)
@@ -116,18 +116,20 @@ typedef struct
     CFE_SB_MsgId_t MsgID;
     uint16 MsgLimit;
     uint16 PQueueIdx;
-} TO_AddMessageCmd_t;
+} TO_AddMessageFlowCmd_t;
 
 typedef struct
 {
     uint8  ucCmdHeader[CFE_SB_CMD_HDR_SIZE];
     CFE_SB_MsgId_t MsgID;
-} TO_RemoveMessageCmd_t;
+    uint16 PQueueIdx;
+} TO_RemoveMessageFlowCmd_t;
 
 typedef struct
 {
     uint8  ucCmdHeader[CFE_SB_CMD_HDR_SIZE];
     CFE_SB_MsgId_t MsgID;
+    uint16 PQueueIdx;
 } TO_QueryMessageFlowCmd_t;
 
 typedef struct

@@ -20,8 +20,12 @@ void TO_MessageFlow_ResetCountsAll(void);
 int32 TO_MessageFlow_TeardownAll(void);
 int32 TO_MessageFlow_BuildupAll(void);
 void TO_MessageFlow_CleanupAll(void);
-TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(CFE_SB_MsgId_t MsgID);
+TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(CFE_SB_MsgId_t MsgID, uint32 *Cursor);
+TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
 TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_TlmMessageFlow_t *MsgFlow);
-boolean TO_MessageFlow_Query(CFE_SB_MsgId_t MsgID);
+
+boolean TO_MessageFlow_Add(CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueIdx);
+boolean TO_MessageFlow_Remove(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
+boolean TO_MessageFlow_Query(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
 
 #endif

@@ -20,7 +20,7 @@
 #include "to_msg.h"
 #include "to_events.h"
 #include "to_config_utils.h"
-#include "to_cds_utils.h"
+#include "to_tbldefs.h"
 #include "to_message_flow.h"
 #include "to_classifier.h"
 #include "to_priority_queue.h"
@@ -197,7 +197,7 @@ int32  TO_InitEvent(void);
 **  \endreturns
 **
 *************************************************************************/
-int32  TO_InitData(void);
+void  TO_InitData(void);
 
 /************************************************************************/
 /** \brief Initialize message pipes

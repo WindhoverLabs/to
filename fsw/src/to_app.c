@@ -73,9 +73,6 @@ int32 TO_InitEvent()
     TO_AppData.EventTbl[  ind].EventID = TO_CONFIG_TABLE_ERR_EID;
     TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
 
-    TO_AppData.EventTbl[  ind].EventID = TO_CDS_ERR_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
-
     TO_AppData.EventTbl[  ind].EventID = TO_PIPE_ERR_EID;
     TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
 
@@ -193,10 +190,8 @@ TO_InitPipe_Exit_Tag:
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-int32 TO_InitData()
+void TO_InitData()
 {
-    int32  iStatus=CFE_SUCCESS;
-
     /* Init input data */
     memset((void*)&TO_AppData.InData, 0x00, sizeof(TO_AppData.InData));
 
@@ -207,8 +202,6 @@ int32 TO_InitData()
     /* Init housekeeping packet */
     CFE_SB_InitMsg(&TO_AppData.HkTlm,
                    TO_HK_TLM_MID, sizeof(TO_AppData.HkTlm), TRUE);
-
-    return (iStatus);
 }
 
 
@@ -252,14 +245,7 @@ int32 TO_InitApp()
         goto TO_InitApp_Exit_Tag;
     }
 
-    iStatus = TO_InitData();
-    if (iStatus != CFE_SUCCESS)
-    {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-                                 "Failed to init data (0x%08X)",
-                                 (unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
+    TO_InitData();
 
     /* Initialize the memory pool for the priority queues and output channel
      * queues.
@@ -271,15 +257,6 @@ int32 TO_InitApp()
     {
     	(void) CFE_EVS_SendEvent(TO_CR_POOL_ERR_EID, CFE_EVS_ERROR,
         		"Error creating memory pool (0x%08X)",(unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
-
-    iStatus = TO_InitCdsTbl();
-    if (iStatus != CFE_SUCCESS)
-    {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-                                 "Failed to init CDS table (0x%08X)",
-                                 (unsigned int)iStatus);
         goto TO_InitApp_Exit_Tag;
     }
 
@@ -487,37 +464,69 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
         switch (uiCmdCode)
         {
             case TO_NOOP_CC:
-                TO_AppData.HkTlm.usCmdCnt++;
-                (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "Recvd NOOP cmd (%u), Version %d.%d.%d.%d",
-                                  (unsigned int)uiCmdCode,
-                                  TO_MAJOR_VERSION,
-                                  TO_MINOR_VERSION,
-                                  TO_REVISION,
-                                  TO_MISSION_REV);
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
+            	{
+					TO_AppData.HkTlm.usCmdCnt++;
+					(void) CFE_EVS_SendEvent(TO_CMD_NOOP_EID, CFE_EVS_INFORMATION,
+									  "Executed NOOP cmd (%u), Version %d.%d.%d.%d",
+									  (unsigned int)uiCmdCode,
+									  TO_MAJOR_VERSION,
+									  TO_MINOR_VERSION,
+									  TO_REVISION,
+									  TO_MISSION_REV);
+            	}
                 break;
 
             case TO_RESET_CC:
-                TO_AppData.HkTlm.usCmdCnt = 0;
-                TO_AppData.HkTlm.usCmdErrCnt = 0;
-                TO_AppData.HkTlm.usTotalMsgDropped = 0;
-                TO_AppData.HkTlm.usNoSerFuncCnt = 0;
-                TO_MessageFlow_ResetCountsAll();
-                TO_PriorityQueue_ResetCountsAll();
-                TO_OutputChannel_ResetCountsAll();
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
+            	{
+					TO_AppData.HkTlm.usCmdCnt = 0;
+					TO_AppData.HkTlm.usCmdErrCnt = 0;
+					TO_AppData.HkTlm.usTotalMsgDropped = 0;
+					TO_AppData.HkTlm.usNoSerFuncCnt = 0;
+					TO_MessageFlow_ResetCountsAll();
+					TO_PriorityQueue_ResetCountsAll();
+					TO_OutputChannel_ResetCountsAll();
 
-                (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "Recvd RESET cmd (%u)", (unsigned int)uiCmdCode);
+					(void) CFE_EVS_SendEvent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION,
+									  "Executed RESET cmd (%u)", (unsigned int)uiCmdCode);
+            	}
                 break;
 
-            case TO_ADD_MESSAGE_CC:
-                (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "Recvd ADD_MESSAGE cmd (%u)", (unsigned int)uiCmdCode);
+            case TO_ADD_MESSAGE_FLOW_CC:
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_AddMessageFlowCmd_t)))
+            	{
+            		TO_AddMessageFlowCmd_t *cmd = (TO_AddMessageFlowCmd_t*)MsgPtr;
+
+            		if(TO_MessageFlow_Add(cmd->MsgID, cmd->MsgLimit, cmd->PQueueIdx) == FALSE)
+            		{
+            			TO_AppData.HkTlm.usCmdErrCnt++;
+            		}
+            		else
+            		{
+            			TO_AppData.HkTlm.usCmdCnt++;
+    					(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_INFORMATION,
+    									  "Executed ADD_MESSAGE cmd (%u)", (unsigned int)uiCmdCode);
+            		}
+            	}
             	break;
 
-            case TO_REMOVE_MESSAGE_CC:
-                (void) CFE_EVS_SendEvent(TO_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "Recvd REMOVE_MESSGE cmd (%u)", (unsigned int)uiCmdCode);
+            case TO_REMOVE_MESSAGE_FLOW_CC:
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_RemoveMessageFlowCmd_t)))
+            	{
+            		TO_RemoveMessageFlowCmd_t *cmd = (TO_RemoveMessageFlowCmd_t*)MsgPtr;
+
+            		if(TO_MessageFlow_Remove(cmd->MsgID, cmd->PQueueIdx) == FALSE)
+            		{
+            			TO_AppData.HkTlm.usCmdErrCnt++;
+            		}
+            		else
+            		{
+            			TO_AppData.HkTlm.usCmdCnt++;
+    					(void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID, CFE_EVS_INFORMATION,
+    									  "Executed ADD_REMOVE cmd (%u)", (unsigned int)uiCmdCode);
+            		}
+            	}
             	break;
 
             case TO_QUERY_MESSAGE_FLOW_CC:
@@ -525,7 +534,7 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
             	{
             		TO_QueryMessageFlowCmd_t *cmd = (TO_QueryMessageFlowCmd_t*)MsgPtr;
 
-            		if(TO_MessageFlow_Query(cmd->MsgID) == FALSE)
+            		if(TO_MessageFlow_Query(cmd->MsgID, cmd->PQueueIdx) == FALSE)
             		{
             			TO_AppData.HkTlm.usCmdErrCnt++;
             		}
@@ -716,12 +725,6 @@ void TO_AppMain()
         {
             /* TODO: Decide what to do for other return values in TO_RcvMsg(). */
         }
-        /* TODO: This is only a suggestion for when to update and save CDS table.
-        ** Depends on the nature of the application, the frequency of update
-        ** and save can be more or less independently.
-        */
-        TO_UpdateCdsTbl();
-        TO_SaveCdsTbl();
 
         iStatus = TO_AcquireConfigPointers();
         if(iStatus != CFE_SUCCESS)

@@ -199,6 +199,10 @@ typedef enum {
 	TO_MSG_FLOW_INFO_EID,
 	TO_PQUEUE_INFO_EID,
 	TO_OUT_CH_INFO_EID,
+	TO_CMD_NOOP_EID,
+	TO_CMD_RESET_EID,
+	TO_CMD_ADD_MSG_FLOW_EID,
+	TO_CMD_REMOVE_MSG_FLOW_EID,
 
 /** \brief <tt> This is a count of all the app events and should not be used. </tt> */
     TO_EVT_CNT

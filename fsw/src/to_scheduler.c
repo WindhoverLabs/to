@@ -27,17 +27,19 @@ void TO_Scheduler_Run()
 			if(pqueue->OSALQueueID !=0)
 			{
 				TO_TlmOutputChannelQueue_t *channel = &TO_AppData.Config.OutputChannel[pqueue->ChannelID];
-				CFE_SB_MsgPtr_t  msgPtr = 0;
-				uint32 msgSize = 0;
+				void *buffer;
+				uint32 bufferSize = 0;
 				while((iStatus == OS_SUCCESS) && (channel->CurrentlyQueuedCnt < channel->MsgLimit))
 				{
 					iStatus =  OS_QueueGet(
 							TO_AppData.Config.PriorityQueue[i].OSALQueueID,
-							&msgPtr, sizeof(msgPtr), &msgSize, OS_CHECK);
+							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
 					if(iStatus == OS_SUCCESS)
 					{
+						//OS_printf("TO_Scheduler_Run  dequeue   (%04x %04x %04x)\n", buf[0], buf[1], buf[2]);
+
 						TO_AppData.Config.PriorityQueue[i].CurrentlyQueuedCnt--;
-						iStatus == TO_OutputChannel_QueueMsg(msgPtr, channel);
+						iStatus == TO_OutputChannel_QueueMsg(buffer, channel);
 		            	if(iStatus == CFE_SUCCESS)
 		            	{
 		            		channel->CurrentlyQueuedCnt++;

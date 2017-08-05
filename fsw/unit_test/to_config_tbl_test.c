@@ -26,7 +26,7 @@ void TO_Config_Tbl_Test_Case1(void)
 
 void TO_Config_Tbl_Test_AddTestCases(void)
 {
-    UtTest_Add(TO_Config_Tbl_Test_Case1, TO_Test_Setup, TO_Test_TearDown, "TO_Config_Tbl_Test_Case1");
+    UtTest_Add(TO_Config_Tbl_Test_Case1, TO_Test_Setup_EmptyConfig, TO_Test_TearDown, "TO_Config_Tbl_Test_Case1");
 }
 
 

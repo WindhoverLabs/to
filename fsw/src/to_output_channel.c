@@ -71,17 +71,17 @@ int32 TO_OutputChannel_TeardownAll(void)
 		{
 			if(TO_AppData.Config.OutputChannel[i].OSALQueueID !=0)
 			{
-				CFE_SB_MsgPtr_t  msgPtr = 0;
-				uint32 msgSize = 0;
+				void *buffer;
+				uint32 bufferSize = 0;
 				while(iStatus == OS_SUCCESS)
 				{
 					iStatus =  OS_QueueGet(
 							TO_AppData.Config.OutputChannel[i].OSALQueueID,
-							&msgPtr, sizeof(msgPtr), &msgSize, OS_CHECK);
+							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
 					if(iStatus == OS_SUCCESS)
 					{
-						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)msgPtr);
-						if(iStatus != OS_SUCCESS)
+						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)buffer);
+						if(iStatus < 0)
 						{
 							(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
 									"Failed to return message back to memory pool on tbl load. (%i)",
@@ -145,7 +145,9 @@ int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputChannelQueue
 		goto end_of_function;
 	}
 
-    /* Queue the pointer to the message. */
+    //uint16 *buf = (uint16*)MsgPtr;
+    ///* Queue the pointer to the message. */
+	//OS_printf("TO_OutputChannel_QueueMsg(0x%08lx)  (%04x %04x %04x)\n",  MsgPtr, buf[0], buf[1], buf[2]);
     iStatus = OS_QueuePut(OutChannel->OSALQueueID, &MsgPtr, sizeof(MsgPtr), 0);
     if(iStatus == OS_QUEUE_FULL)
     {
@@ -166,7 +168,7 @@ int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputChannelQueue
     {
         (void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
                           "OS_QueuePut failed: size=%u error=%i",
-						  sizeof(&MsgPtr), (int)iStatus);
+						  sizeof(MsgPtr), (int)iStatus);
         goto end_of_function;
     }
 
@@ -189,7 +191,7 @@ boolean TO_OutputChannel_Query(uint16 OutputChannelIdx)
 	{
 		TO_TlmOutputChannelQueue_t *channel = (TO_TlmOutputChannelQueue_t*)&TO_AppData.Config.OutputChannel[OutputChannelIdx];
 		(void) CFE_EVS_SendEvent(TO_OUT_CH_INFO_EID, CFE_EVS_INFORMATION,
-							  "OCI=%u S=%u ML=%u SC=%u CQC=%u HWM=%u ",
+							  "OCI=%u S=%u ML=%u SC=%u CQC=%u HWM=%u",
 							  OutputChannelIdx,
 							  channel->State,
 							  channel->MsgLimit,

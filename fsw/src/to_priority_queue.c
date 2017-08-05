@@ -34,7 +34,7 @@ int32 TO_PriorityQueue_BuildupAll(void)
 			iStatus = OS_QueueCreate(
 					&TO_AppData.Config.PriorityQueue[i].OSALQueueID,
 					QueueName,
-					TO_AppData.Config.OutputChannel[i].MsgLimit,
+					TO_AppData.Config.PriorityQueue[i].MsgLimit,
 					sizeof(CFE_SB_Msg_t*),
 					0);
 			if (iStatus != OS_SUCCESS)
@@ -64,17 +64,17 @@ int32 TO_PriorityQueue_TeardownAll(void)
 		{
 			if(TO_AppData.Config.PriorityQueue[i].OSALQueueID !=0)
 			{
-				CFE_SB_MsgPtr_t  msgPtr = 0;
-				uint32 msgSize = 0;
+				void *buffer;
+				uint32 bufferSize = 0;
 				while(iStatus == OS_SUCCESS)
 				{
 					iStatus =  OS_QueueGet(
 							TO_AppData.Config.PriorityQueue[i].OSALQueueID,
-							&msgPtr, sizeof(msgPtr), &msgSize, OS_CHECK);
+							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
 					if(iStatus == OS_SUCCESS)
 					{
-						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)msgPtr);
-						if(iStatus != OS_SUCCESS)
+						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)buffer);
+						if(iStatus < 0)
 						{
 							(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
 									"Failed to return message back to memory pool on tbl load. (%i)",
@@ -125,8 +125,8 @@ void TO_PriorityQueue_CleanupAll(void )
 int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* PQueue)
 {
 	int32 iStatus = 0;
-	CFE_SB_MsgPtr_t  msgCopy;
-	uint16 msgSize = 0;
+	void *copyBuffer;
+	uint32 bufferSize = 0;
 
 	if(PQueue == 0)
 	{
@@ -134,35 +134,36 @@ int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* P
 		goto end_of_function;
 	}
 
-	msgSize = CFE_SB_GetTotalMsgLength(MsgPtr);
+	bufferSize = CFE_SB_GetTotalMsgLength(MsgPtr);
 
 	/* Allocate a chunk of memory from the memory pool to store the message
 	 * copy.
 	 */
-    iStatus = CFE_ES_GetPoolBuf ((uint32 **) &msgCopy,
-    		TO_AppData.HkTlm.MemPoolHandle, msgSize);
-    if(iStatus < msgSize)
+    iStatus = CFE_ES_GetPoolBuf ((uint32 **) &copyBuffer,
+    		TO_AppData.HkTlm.MemPoolHandle, bufferSize);
+    if(iStatus < bufferSize)
     {
         (void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
                           "GetPoolBuf failed: size=%u error=%i",
-                          msgSize, (int)iStatus);
-        exit(1);
+						  bufferSize, (int)iStatus);
         goto end_of_function;
     }
 
     /* Copy the message into the newly allocated memory. */
-    memcpy(msgCopy, MsgPtr, msgSize);
+    memcpy(copyBuffer, MsgPtr, bufferSize);
 
     /* Queue the pointer to the message copy. */
-    iStatus = OS_QueuePut(PQueue->OSALQueueID, &msgCopy, sizeof(msgCopy), 0);
+    //uint16 *buf = (uint16*)msgCopy;
+	//OS_printf("TO_PriorityQueue_QueueMsg   (%04x %04x %04x)\n", buf[0], buf[1], buf[2]);
+    iStatus = OS_QueuePut(PQueue->OSALQueueID, &copyBuffer, sizeof(copyBuffer), 0);
     if(iStatus == OS_QUEUE_FULL)
     {
     	/* This is ok.  Just let the caller no the queue is full.  But,
     	 * deallocate the memory allocated first since we don't need it
     	 * anymore.
     	 */
-		iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)msgCopy);
-	    if(iStatus < msgSize)
+		iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)copyBuffer);
+	    if(iStatus < 0)
     	{
         	(void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
                              "PutPoolBuf: error=%i",
@@ -175,7 +176,7 @@ int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* P
     {
         (void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
                           "OS_QueuePut failed: size=%u error=%i",
-						  sizeof(&msgCopy), (int)iStatus);
+						  sizeof(copyBuffer), (int)iStatus);
         goto end_of_function;
     }
 
@@ -212,4 +213,22 @@ boolean TO_PriorityQueue_Query(uint16 PQueueIdx)
 	}
 
 	return rc;
+}
+
+
+
+boolean TO_PriorityQueue_IsValid(uint32 PQueueIdx)
+{
+	boolean isValid = TRUE;
+
+	if(PQueueIdx >= TO_MAX_PRIORITY_QUEUES)
+	{
+		isValid = FALSE;
+	}
+	else if(TO_AppData.Config.PriorityQueue[PQueueIdx].State != TO_PQUEUE_ENA)
+	{
+		isValid = FALSE;
+	}
+
+	return isValid;
 }
