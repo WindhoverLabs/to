@@ -1,14 +1,36 @@
 #ifndef TO_PRIORITY_QUEUE_H
 #define TO_PRIORITY_QUEUE_H
 
+/************************************************************************
+** Pragmas
+*************************************************************************/
+
+/************************************************************************
+** Includes
+*************************************************************************/
+
 #include "cfe.h"
 
+/************************************************************************
+** Local Defines
+*************************************************************************/
+
+/************************************************************************
+** Local Structure Definitions
+*************************************************************************/
+
+/**
+** \brief Priority queue state.  Used to determine if a table entry is used or not.
+*/
 typedef enum
 {
 	TO_PQUEUE_UNUSED = 0,
 	TO_PQUEUE_ENA = 1,
 } TO_PriorityQueueState_t;
 
+/**
+** \brief Priority queue type.  'FIFO' queues are normal FIFO queues, but 'SINGLE' queues have the message flow removed after a message is pushed onto the queue.
+*/
 typedef enum
 {
 	TO_PRIORITY_QUEUE_TYPE_FIFO = 0,
@@ -30,12 +52,128 @@ typedef struct
     uint32					OSALQueueID;
 } TO_TlmPriorityQueue_t;
 
+/************************************************************************
+** External Global Variables
+*************************************************************************/
+
+
+
+/************************************************************************/
+/** \brief Resets all metrics.
+**
+**  \par Description
+**       This function is called at when the Reset command is received.
+**       It resets all metrics, which include the Dropped Message Counts,
+**       and Queued Message Counts.
+**
+*************************************************************************/
 void TO_PriorityQueue_ResetCountsAll(void);
+
+
+
+/************************************************************************/
+/** \brief Cleanup all PRIORITY QUEUES.
+**
+**  \par Description
+**       This function is call at application termination and empties
+**       the queue, deallocating each message its popped off the queue.
+**
+*************************************************************************/
 void TO_PriorityQueue_CleanupAll(void );
+
+
+
+/************************************************************************/
+/** \brief Buildup all priority queues.
+**
+**  \par Description
+**       This function is called at when the application has loaded a new
+**       configuration table.
+**
+**  \returns
+**  0 if no error occurred.  On error, an OSAL error is returned
+**  indicating what error occured.
+**  \endreturns
+**
+*************************************************************************/
 int32 TO_PriorityQueue_BuildupAll(void);
+
+
+
+/************************************************************************/
+/** \brief Queue message.
+**
+**  \par Description
+**       This function is called by the Classifier to queue a message
+**       into a priority queue.
+**
+**  \param [in]   MsgPtr        A #CFE_SB_Msg_t pointer that
+**                              references the software bus message
+
+**
+**  \param [in]   PQueue        A #TO_TlmPriorityQueue_t pointer to
+**                              the priority queue object.
+**
+**  \returns
+**  0 if successful.  OSAL error if unsuccessful.
+**  \endreturns
+**
+*************************************************************************/
 int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* PQueue);
+
+
+
+/************************************************************************/
+/** \brief Teardown all priority queues.
+**
+**  \par Description
+**       This function is called at when the application is about to load
+**       a new configuration table.  This will flush the queues and
+**       deallocate the messages contained in the queues.
+**
+**  \returns
+**  0 if successful.  OSAL error if unsuccessful.
+**  \endreturns
+**
+*************************************************************************/
 int32 TO_PriorityQueue_TeardownAll(void);
+
+
+
+/************************************************************************/
+/** \brief Query a priority queue.
+**
+**  \par Description
+**       This function is called when a ground command is received to
+**       query a message flow.  An event is raised with the following
+**       text format:
+**       "PQI=<PQueueIndex> CI=<ChannelID> S=<State> ML=<MsgLimit> QT=<QueueType> D=<DroppedMsgCnt> Q=<QueuedMsgCnt> CQ=<CurrentlyQueuedCnt> HWM=<HighwaterMark>"
+**
+**  \param [in]   PQueueIdx     Index of the priority queue.
+**
+**  \returns
+**  TRUE if priority queue is found.  FALSE if not found.
+**  \endreturns
+**
+*************************************************************************/
 boolean TO_PriorityQueue_Query(uint16 PQueueIdx);
+
+
+
+/************************************************************************/
+/** \brief Checks whether a priority index is valid or not.
+**
+**  \par Description
+**       This function is used internally to determine if an index is
+**       to a valid priority queue.
+**
+**  \param [in]   PQueueIdx     Index of the priority queue.
+**
+**  \returns
+**  TRUE if priority queue is valid.  FALSE if not.
+**  \endreturns
+**
+*************************************************************************/
 boolean TO_PriorityQueue_IsValid(uint32 PQueueIdx);
 
 

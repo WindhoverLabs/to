@@ -3,6 +3,11 @@
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Clear all dynamics metrics.                                     */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_PriorityQueue_ResetCountsAll(void)
 {
 	uint32 i = 0;
@@ -17,6 +22,11 @@ void TO_PriorityQueue_ResetCountsAll(void)
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Buildup all priority queues after a reconfiguration.            */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_PriorityQueue_BuildupAll(void)
 {
 	uint32 i = 0;
@@ -53,6 +63,12 @@ int32 TO_PriorityQueue_BuildupAll(void)
 }
 
 
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Teardown all priority queues after a reconfiguration.           */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_PriorityQueue_TeardownAll(void)
 {
 	uint32 i = 0;
@@ -115,13 +131,23 @@ end_of_function:
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Cleanup all priority queues for termination.                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_PriorityQueue_CleanupAll(void )
 {
-
+	TO_PriorityQueue_TeardownAll();
 }
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Push a message on a priority queue.                             */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* PQueue)
 {
 	int32 iStatus = 0;
@@ -144,7 +170,7 @@ int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* P
     if(iStatus < bufferSize)
     {
         (void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
-                          "GetPoolBuf failed: size=%u error=%i",
+                          "GetPoolBuf failed: size=%lu error=%i",
 						  bufferSize, (int)iStatus);
         goto end_of_function;
     }
@@ -153,8 +179,6 @@ int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* P
     memcpy(copyBuffer, MsgPtr, bufferSize);
 
     /* Queue the pointer to the message copy. */
-    //uint16 *buf = (uint16*)msgCopy;
-	//OS_printf("TO_PriorityQueue_QueueMsg   (%04x %04x %04x)\n", buf[0], buf[1], buf[2]);
     iStatus = OS_QueuePut(PQueue->OSALQueueID, &copyBuffer, sizeof(copyBuffer), 0);
     if(iStatus == OS_QUEUE_FULL)
     {
@@ -170,7 +194,7 @@ int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* P
                              (int)iStatus);
         	goto end_of_function;
     	}
-	    iStatus = CFE_SUCCESS;
+	    iStatus = -1;
     }
     else if(iStatus != CFE_SUCCESS)
     {
@@ -186,6 +210,11 @@ end_of_function:
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Query a priority queue.                                         */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 boolean TO_PriorityQueue_Query(uint16 PQueueIdx)
 {
 	boolean rc = FALSE;
@@ -199,7 +228,7 @@ boolean TO_PriorityQueue_Query(uint16 PQueueIdx)
 	{
 		TO_TlmPriorityQueue_t *pqueue = (TO_TlmPriorityQueue_t*)&TO_AppData.Config.PriorityQueue[PQueueIdx];
 		(void) CFE_EVS_SendEvent(TO_PQUEUE_INFO_EID, CFE_EVS_INFORMATION,
-							  "PQI=%u S=%u OCI=%u ML=%u QT=%u D=%u Q=%u CQ=%u HWM=%u",
+							  "PQI=%u CI=%u S=%u ML=%u QT=%u D=%u Q=%u CQ=%u HWM=%u",
 							  PQueueIdx,
 							  pqueue->ChannelID,
 							  pqueue->State,
@@ -217,6 +246,11 @@ boolean TO_PriorityQueue_Query(uint16 PQueueIdx)
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Is this index a valid priority queue?                           */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 boolean TO_PriorityQueue_IsValid(uint32 PQueueIdx)
 {
 	boolean isValid = TRUE;

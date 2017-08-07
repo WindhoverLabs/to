@@ -1,17 +1,42 @@
 #ifndef TO_CLASSIFIER_H
 #define TO_CLASSIFIER_H
 
+/************************************************************************
+** Pragmas
+*************************************************************************/
+
+/************************************************************************
+** Includes
+*************************************************************************/
+
 #include "cfe.h"
 #include "to_message_flow.h"
 #include "to_priority_queue.h"
 
+/************************************************************************
+** Local Defines
+*************************************************************************/
 
-/* TODO:  Add Doxygen markup. */
+/************************************************************************
+** Local Structure Definitions
+*************************************************************************/
+
+/************************************************************************
+** External Global Variables
+*************************************************************************/
+
+/************************************************************************/
+/** \brief Runs the Classifier algorithm on incoming message flows.
+**
+**  \par Description
+**       This runs a priority based classification algorithm that pops
+**       messages from incoming message flows, and copies the messages
+**       to the priority queue specified in the configuration table.
+**
+**  \par Assumptions, External Events, and Notes:
+**       This will raise error events as errors are encountered.
+**
+*************************************************************************/
 void TO_Classifier_Run(void);
-TO_TlmMessageFlow_t* TO_Classifier_GetMsgFlowObject(CFE_SB_MsgId_t MsgID);
-TO_TlmPriorityQueue_t* TO_Classifier_GetPQueueForMessageFlow(TO_TlmMessageFlow_t *MsgFlow);
-void TO_Classifier_ResetCounts(void);
-
-void TO_Classifier_Teardown(void);
 
 #endif

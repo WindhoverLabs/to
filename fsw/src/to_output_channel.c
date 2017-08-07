@@ -4,6 +4,12 @@
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Initialize all output channel.  This really does nothing        */
+/* but flows down to the custom function.                          */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_OutputChannel_InitAll(void)
 {
 	return TO_OutputChannel_CustomInitAll();
@@ -11,13 +17,25 @@ int32 TO_OutputChannel_InitAll(void)
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Cleanup all output channels before shutdown.  This really does  */
+/* nothing flow down to the custom function.                       */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_OutputChannel_CleanupAll(void)
 {
+	TO_OutputChannel_TeardownAll();
 	TO_OutputChannel_CustomCleanupAll();
 }
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Buildup all output channels after a reconfiguration             */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_OutputChannel_BuildupAll(void)
 {
 	uint32 i = 0;
@@ -58,6 +76,12 @@ end_of_function:
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Teardown all output channels in preparation for a               */
+/* reconfiguration.                                                */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_OutputChannel_TeardownAll(void)
 {
 	uint32 i = 0;
@@ -122,6 +146,11 @@ end_of_function:
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Reset all dynamic metrics.                                      */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_OutputChannel_ResetCountsAll(void)
 {
 	uint32 i = 0;
@@ -135,6 +164,11 @@ void TO_OutputChannel_ResetCountsAll(void)
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Push a message on the output channel queue.                     */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputChannelQueue_t* OutChannel)
 {
 	int32 iStatus = 0;
@@ -145,15 +179,13 @@ int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputChannelQueue
 		goto end_of_function;
 	}
 
-    //uint16 *buf = (uint16*)MsgPtr;
-    ///* Queue the pointer to the message. */
-	//OS_printf("TO_OutputChannel_QueueMsg(0x%08lx)  (%04x %04x %04x)\n",  MsgPtr, buf[0], buf[1], buf[2]);
     iStatus = OS_QueuePut(OutChannel->OSALQueueID, &MsgPtr, sizeof(MsgPtr), 0);
     if(iStatus == OS_QUEUE_FULL)
     {
-    	/* This is ok.  Just let the caller no the queue is full.  But,
-    	 * deallocate the memory allocated first since we don't need it
-    	 * anymore.
+    	/* This is not supposed to happen since we only queue when the channel
+    	 * is not full, but trap it anyway.  Let the caller no the queue is
+    	 * full and deallocate the memory allocated first since we don't need
+    	 * it anymore.
     	 */
 		iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32 *)MsgPtr);
 	    if(iStatus < 0)
@@ -178,6 +210,11 @@ end_of_function:
 
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Query an output channel.                                        */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 boolean TO_OutputChannel_Query(uint16 OutputChannelIdx)
 {
 	boolean rc = FALSE;
