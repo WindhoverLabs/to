@@ -19,7 +19,7 @@ add_airliner_app_def(to
 
 
 add_airliner_app_unit_test(TO-UT
-    UTF 
+    UTASSERT 
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_app_test
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_cmds_test.c
