@@ -900,7 +900,7 @@ void Test_TO_ProcessNewAppCmds_QueryPriorityQueue_Nominal(void)
 
     /* Verify results */
     UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
-    sprintf(expEventText, "PQI=%u S=%u OCI=%u ML=%u QT=%u D=%u Q=%u CQ=%u HWM=%u",
+    sprintf(expEventText, "PQI=%u CI=%u S=%u ML=%u QT=%u D=%u Q=%u CQ=%u HWM=%u",
     		PQueueIdx,
     		TO_AppData.Config.PriorityQueue[PQueueIdx].ChannelID,
     		TO_AppData.Config.PriorityQueue[PQueueIdx].State,
