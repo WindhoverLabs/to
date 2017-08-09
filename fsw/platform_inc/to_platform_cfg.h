@@ -1,74 +1,124 @@
-/*==============================================================================
-Copyright (c) 2015, Windhover Labs
-All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+#ifndef TO_PLATFORM_CFG_H
+#define TO_PLATFORM_CFG_H
 
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of TlmOut nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-    
-#ifndef _TO_PLATFORM_CFG_H_
-#define _TO_PLATFORM_CFG_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
-** Pragmas
+** to Platform Configuration Parameter Definitions
 */
 
-/*
-** Local Defines
+/** \brief Mission specific version number for TO application
+**  
+**  \par Description:
+**       An application version number consists of four parts:
+**       major version number, minor version number, revision
+**       number and mission specific revision number. The mission
+**       specific revision number is defined here and the other
+**       parts are defined in "to_version.h".
+**
+**  \par Limits:
+**       Must be defined as a numeric value that is greater than
+**       or equal to zero.
 */
-#define TO_ILOAD_MAX_ENTRIES   1
-#define TO_CONFIG_FILENAME      "/cf/apps/to_config.tbl"
-#define TO_WAKEUP_TIMEOUT		1000
+#define TO_MISSION_REV                (0)
 
-/*
-** Include Files
+/** \brief Pipe depth for the Scheduler pipe 
+**
+**  \par Limits:
+**       minimum of 1, max of CFE_SB_MAX_PIPE_DEPTH.
 */
+#define TO_SCH_PIPE_DEPTH             (2)
 
-/*
-** Local Structure Declarations
+/** \brief Pipe name for the Scheduler pipe 
+**
+**  \par Limits:
+**       Note, this name must fit in OS_MAX_API_NAME.
 */
+#define TO_SCH_PIPE_NAME              ("TO_SCH_PIPE")
 
-/*
-** External Global Variables
+/** \brief The SB pend behavior type for the Scheduler pipe.
+**
+**  \par Limits:
+**       One of: CFE_SB_POLL, CFE_SB_PEND_FOREVER, or the 
+**       number of milliseconds to wait for a new message (recommended).
+**       Note, using CFE_SB_PEND_FOREVER may cause an unresponsive
+**       application if no messages arrive on this pipe.
 */
+#define TO_SCH_PIPE_PEND_TIME         (2000)
 
-/*
-** Global Variables
+/** \brief The number of WAKEUP messages to reserve on the Scheduler pipe.
+**
+**  \par Limits:
+**       minimum of 1, max limited to CFE_SB_MAX_PIPE_DEPTH-1.  Note the
+**       TO_SCH_PIPE_WAKEUP_RESERVED and TO_SCH_PIPE_SEND_HK_RESERVED
+**       must be less than TO_SCH_PIPE_DEPTH.
 */
+#define TO_SCH_PIPE_WAKEUP_RESERVED   (1)
 
-/*
-** Local Variables
+/** \brief The number of SEND_HK messages to reserve on the Scheduler pipe.
+**
+**  \par Limits:
+**       minimum of 1, max of CFE_SB_MAX_PIPE_DEPTH.  Note the
+**       TO_SCH_PIPE_WAKEUP_RESERVED and TO_SCH_PIPE_SEND_HK_RESERVED
+**       must be less than TO_SCH_PIPE_DEPTH.
 */
+#define TO_SCH_PIPE_SEND_HK_RESERVED  (1)
 
-/*
-** Local Function Prototypes
+/** \brief Pipe depth for the command pipe
+**
+**  \par Limits:
+**       minimum of 1, max of CFE_SB_MAX_PIPE_DEPTH.
 */
+#define TO_CMD_PIPE_DEPTH             (4)
 
-#endif /* _TO_PLATFORM_CFG_H_ */
+/** \brief Pipe name for the Scheduler pipe 
+**
+**  \par Limits:
+**       Note, this name must fit in OS_MAX_API_NAME.
+*/
+#define TO_CMD_PIPE_NAME              ("TO_CMD_PIPE")
 
-/*=======================================================================================
-** End of file to_platform_cfg.h
-**=====================================================================================*/
+/** \brief Pipe depth for the data pipe 
+**
+**  \par Limits:
+**       minimum of 1, max of CFE_SB_MAX_PIPE_DEPTH.
+*/
+#define TO_DATA_PIPE_DEPTH            (4)
+
+/** \brief Pipe name for the Scheduler pipe 
+**
+**  \par Limits:
+**       Note, this name must fit in OS_MAX_API_NAME.
+*/
+#define TO_DATA_PIPE_NAME             ("TO_DATA_PIPE")
+
+/** \brief The config table default filename
+**
+**  \par Limits:
+**       The length of each string, including the NULL terminator cannot exceed
+**       the #OS_MAX_PATH_LEN value.
+*/
+#define TO_CONFIG_TABLE_FILENAME      ("/cf/apps/to_config.tbl")
+/** \brief The timeout value, in milliseconds, to wait for ES application startup sync.
+**
+**  \par Limits:
+**       This parameter must be at least 1000 (ms).
+*/
+#define TO_STARTUP_TIMEOUT_MSEC    (1000)
+
+/* TODO:  Add more platform configuration parameter definitions here, if necessary. */
+#define TO_MAX_OUTPUT_CHANNELS				  5
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* TO_PLATFORM_CFG_H */
+
+/************************/
+/*  End of File Comment */
+/************************/
     
