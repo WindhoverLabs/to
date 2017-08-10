@@ -18,6 +18,7 @@
 #include "ut_cfe_time_stubs.h"
 #include "ut_osapi_hooks.h"
 #include "ut_cfe_es_hooks.h"
+#include "ut_cfe_es_hooks_ex.h"
 
 
 int32 hookCalledCount = 0;
