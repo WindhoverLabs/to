@@ -1,14 +1,14 @@
 # Doxyfile 1.5.4
-@INCLUDE_PATH=@PROJECT_SOURCE_DIR@/apps/to/docs/dox_src/mnem_maps
-@INCLUDE=cfs_to_cmd_mnem_map
-@INCLUDE=cfs_to_tlm_mnem_map
+@INCLUDE_PATH=@CFS_MISSION@/apps/comm/docs/dox_src/mnem_maps
+@INCLUDE=cfs_comm_cmd_mnem_map
+@INCLUDE=cfs_comm_tlm_mnem_map
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
 #DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = "Telemetry Output (TO) Application on @BUILD_CONFIG_NAME@ User's Guide"
+PROJECT_NAME           = "Sample from Template (COMM) Application on @BUILD_CONFIG_NAME@ User's Guide"
 PROJECT_NUMBER         = 
-OUTPUT_DIRECTORY       = @CFS_DOCS_HTML_DIR@/users_guide/apps/to
+OUTPUT_DIRECTORY       = @CFS_DOCS_HTML_DIR@/users_guide/apps/comm
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 BRIEF_MEMBER_DESC      = YES
@@ -17,7 +17,7 @@ ABBREVIATE_BRIEF       =
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = YES
-STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@
+STRIP_FROM_PATH        = @CFS_MISSION@
 STRIP_FROM_INC_PATH    = 
 SHORT_NAMES            = NO
 JAVADOC_AUTOBRIEF      = NO
@@ -27,7 +27,7 @@ DETAILS_AT_TOP         = NO
 INHERIT_DOCS           = YES
 SEPARATE_MEMBER_PAGES  = NO
 TAB_SIZE               = 8
-ALIASES               += "event=\xrefitem cfstoevents \"Event Message\" \"Telemetry Output Event Message Cross Reference\" "
+ALIASES               += "event=\xrefitem cfscommevents \"Event Message\" \"Sample from Template Event Message Cross Reference\" "
 ALIASES               += "retdesc=<TD WIDTH=\"80%\"> "
 ALIASES               += "retcode=<TR><TD WIDTH=\"20%\" VALIGN=TOP> "
 ALIASES               += endcode=</TR>
@@ -35,11 +35,11 @@ ALIASES               += "returns=\return <TABLE BORDER=\"0\" CELLPADDING=\"2\" 
 ALIASES               += endreturns=</TABLE>
 ALIASES               += "retstmt=<TR><TD COLSPAN=2 WIDTH=\"100%\"> "
 ALIASES               += endstmt=</TR>
-ALIASES               += "tocmd=\xrefitem cfstocmds \"Name\" \"Telemetry Output Commands\"  "
-ALIASES               += "totlm=\xrefitem cfstotlm \"Name\" \"Telemetry Output Telemetry\"  "
-ALIASES               += "tocmdmnemonic=\xrefitem cfstocmdmnems \"Command Mnemonic(s)\" \"Telemetry Output Command Mnemonic Cross Reference\" \b \c  "
-ALIASES               += "totlmmnemonic=\xrefitem cfstotlmmnems \"Telemetry Mnemonic(s)\" \"Telemetry Output Telemetry Mnemonic Cross Reference\" \b \c  "
-ALIASES               += "tocfg=\xrefitem cfstocfg \"Purpose\" \"Telemetry Output Configuration Parameters\"  " 
+ALIASES               += "commcmd=\xrefitem cfscommcmds \"Name\" \"Sample from Template Commands\"  "
+ALIASES               += "commtlm=\xrefitem cfscommtlm \"Name\" \"Sample from Template Telemetry\"  "
+ALIASES               += "commcmdmnemonic=\xrefitem cfscommcmdmnems \"Command Mnemonic(s)\" \"Sample from Template Command Mnemonic Cross Reference\" \b \c  "
+ALIASES               += "commtlmmnemonic=\xrefitem cfscommtlmmnems \"Telemetry Mnemonic(s)\" \"Sample from Template Telemetry Mnemonic Cross Reference\" \b \c  "
+ALIASES               += "commcfg=\xrefitem cfscommcfg \"Purpose\" \"Sample from Template Configuration Parameters\"  " 
 OPTIMIZE_OUTPUT_FOR_C  = YES
 OPTIMIZE_OUTPUT_JAVA   = NO
 BUILTIN_STL_SUPPORT    = NO
@@ -91,18 +91,18 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = @PROJECT_SOURCE_DIR@/apps/to/docs/dox_src/users_guide/cfs_to.dox
-INPUT                 += @PROJECT_SOURCE_DIR@/config/shared/inc/to_mission_cfg.h
-INPUT                 += @PROJECT_SOURCE_DIR@/config/shared/inc/to_perfids.h
-INPUT                 += @PROJECT_SOURCE_DIR@/config/shared/inc/to_msgids.h
-INPUT                 += @PROJECT_SOURCE_DIR@/config/@BUILD_CONFIG_NAME@/inc/to_platform_cfg.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_app.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_cds_utils.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_config_utils.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_events.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_msg.h 
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_tbldefs.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_version.h
+INPUT                  = @CFS_MISSION@/apps/comm/docs/dox_src/users_guide/cfs_comm.dox
+INPUT                 += @CFS_MISSION@/config/mission_inc/comm_mission_cfg.h
+INPUT                 += @CFS_MISSION@/config/mission_inc/comm_perfids.h
+INPUT                 += @CFS_MISSION@/config/mission_inc/comm_msgids.h
+INPUT                 += @CFS_MISSION@/config/@BUILD_CONFIG_NAME@/inc/comm_platform_cfg.h
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_app.h
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_cds_utils.h
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_config_utils.h
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_events.h
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_msg.h 
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_tbldefs.h
+INPUT                 += @CFS_MISSION@/apps/comm/fsw/src/comm_version.h
 
 #INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
@@ -116,7 +116,7 @@ EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO
 IMAGE_PATH             = "./"
-IMAGE_PATH            += "@PROJECT_SOURCE_DIR@/apps/to/docs/dox_src/users_guide/"
+IMAGE_PATH            += "@CFS_MISSION@/apps/comm/docs/dox_src/users_guide/"
 INPUT_FILTER           = 
 FILTER_PATTERNS        = 
 FILTER_SOURCE_FILES    = NO
@@ -141,7 +141,7 @@ IGNORE_PREFIX          =
 # configuration options related to the HTML output
 #---------------------------------------------------------------------------
 GENERATE_HTML          = YES
-HTML_OUTPUT            = @CFS_DOCS_HTML_DIR@/users_guide/apps/to
+HTML_OUTPUT            = @CFS_DOCS_HTML_DIR@/users_guide/apps/comm
 HTML_FILE_EXTENSION    = .html
 HTML_HEADER            = 
 HTML_FOOTER            = 
@@ -162,7 +162,7 @@ TREEVIEW_WIDTH         = 250
 # configuration options related to the LaTeX output
 #---------------------------------------------------------------------------
 GENERATE_LATEX         = YES
-LATEX_OUTPUT           = @CFS_DOCS_LATEX_DIR@/users_guide/apps/to
+LATEX_OUTPUT           = @CFS_DOCS_LATEX_DIR@/users_guide/apps/comm
 LATEX_CMD_NAME         = latex
 MAKEINDEX_CMD_NAME     = makeindex
 COMPACT_LATEX          = YES
@@ -177,7 +177,7 @@ LATEX_HIDE_INDICES     = NO
 # configuration options related to the RTF output
 #---------------------------------------------------------------------------
 GENERATE_RTF           = NO
-RTF_OUTPUT             = @CFS_DOCS_DIR@/users_guide/rtf/apps/to
+RTF_OUTPUT             = @CFS_DOCS_DIR@/users_guide/rtf/apps/comm
 COMPACT_RTF            = YES
 RTF_HYPERLINKS         = NO
 RTF_STYLESHEET_FILE    = 
@@ -228,7 +228,7 @@ SKIP_FUNCTION_MACROS   = YES
 # Configuration::additions related to external references   
 #---------------------------------------------------------------------------
 TAGFILES               = @CFS_DOCS_HTML_DIR@/detailed_design/cfe/cfe.tag=../../../detailed_design/cfe/
-GENERATE_TAGFILE       = @CFS_DOCS_HTML_DIR@/users_guide/apps/to/to.tag
+GENERATE_TAGFILE       = @CFS_DOCS_HTML_DIR@/users_guide/apps/comm/comm.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = YES
 PERL_PATH              = /usr/bin/perl
