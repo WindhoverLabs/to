@@ -1,5 +1,5 @@
 # Doxyfile 1.5.4
-@INCLUDE_PATH=@PROJECT_SOURCE_DIR@/apps/to/docs/dox_src/mnem_maps
+@INCLUDE_PATH=@CMAKE_CURRENT_SOURCE_DIR@/../../docs/dox_src/mnem_maps
 @INCLUDE=cfs_to_cmd_mnem_map
 @INCLUDE=cfs_to_tlm_mnem_map
 #---------------------------------------------------------------------------
@@ -91,18 +91,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = @PROJECT_SOURCE_DIR@/apps/to/docs/dox_src/users_guide/cfs_to.dox
-INPUT                 += @PROJECT_SOURCE_DIR@/config/shared/inc/to_mission_cfg.h
-INPUT                 += @PROJECT_SOURCE_DIR@/config/shared/inc/to_perfids.h
-INPUT                 += @PROJECT_SOURCE_DIR@/config/shared/inc/to_msgids.h
-INPUT                 += @PROJECT_SOURCE_DIR@/config/@BUILD_CONFIG_NAME@/inc/to_platform_cfg.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_app.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_cds_utils.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_config_utils.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_events.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_msg.h 
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_tbldefs.h
-INPUT                 += @PROJECT_SOURCE_DIR@/apps/to/fsw/src/to_version.h
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/../../dox_src/users_guide/cfs_to.dox
+INPUT                 += @INPUT_FILES@
 
 #INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
@@ -116,7 +106,7 @@ EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO
 IMAGE_PATH             = "./"
-IMAGE_PATH            += "@PROJECT_SOURCE_DIR@/apps/to/docs/dox_src/users_guide/"
+IMAGE_PATH            += @CMAKE_CURRENT_SOURCE_DIR@/../../dox_src/users_guide/"
 INPUT_FILTER           = 
 FILTER_PATTERNS        = 
 FILTER_SOURCE_FILES    = NO
@@ -161,7 +151,7 @@ TREEVIEW_WIDTH         = 250
 #---------------------------------------------------------------------------
 # configuration options related to the LaTeX output
 #---------------------------------------------------------------------------
-GENERATE_LATEX         = YES
+GENERATE_LATEX         = NO
 LATEX_OUTPUT           = @CFS_DOCS_LATEX_DIR@/users_guide/apps/to
 LATEX_CMD_NAME         = latex
 MAKEINDEX_CMD_NAME     = makeindex
