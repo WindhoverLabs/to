@@ -93,6 +93,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 INPUT                  = @APP_DEFINITION_DIR@/../../docs/dox_src/users_guide/cfs_to.dox
 INPUT                 += @APP_DEFINITION_DIR@/../src/to_msg.h 
+INPUT                 += @APP_DEFINITION_DIR@/../src/to_events.h 
 INPUT                 += @APP_DEFINITION_DIR@/../src/to_tbldefs.h 
 INPUT                 += @CONFIG_SOURCES@
 
