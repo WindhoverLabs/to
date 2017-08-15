@@ -1,5 +1,5 @@
 # Doxyfile 1.5.4
-@INCLUDE_PATH=@CMAKE_CURRENT_SOURCE_DIR@/../../docs/dox_src/mnem_maps
+@INCLUDE_PATH=@APP_DEFINITION_DIR@/../../docs/dox_src/mnem_maps
 @INCLUDE=cfs_to_cmd_mnem_map
 @INCLUDE=cfs_to_tlm_mnem_map
 #---------------------------------------------------------------------------
@@ -91,8 +91,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/../../dox_src/users_guide/cfs_to.dox
-INPUT                 += @INPUT_FILES@
+INPUT                  = @APP_DEFINITION_DIR@/../../docs/dox_src/users_guide/cfs_to.dox
+INPUT                 += @DEFINITION_SOURCES@
+INPUT                 += @CONFIG_SOURCES@
 
 #INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
@@ -106,7 +107,7 @@ EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO
 IMAGE_PATH             = "./"
-IMAGE_PATH            += @CMAKE_CURRENT_SOURCE_DIR@/../../dox_src/users_guide/"
+IMAGE_PATH            += @APP_DEFINITION_DIR@/../../docs/dox_src/users_guide/"
 INPUT_FILTER           = 
 FILTER_PATTERNS        = 
 FILTER_SOURCE_FILES    = NO
