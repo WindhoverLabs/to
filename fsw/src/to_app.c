@@ -236,6 +236,15 @@ int32 TO_InitApp()
         goto TO_InitApp_Exit_Tag;
     }
 
+    iStatus = TO_OutputChannel_InitAll();
+    if (iStatus != CFE_SUCCESS)
+    {
+    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+            "Failed to init Output Channels (0x%08X)",
+            (unsigned int)iStatus);
+        goto TO_InitApp_Exit_Tag;
+    }
+
     iStatus = TO_InitConfigTbl();
     if (iStatus != CFE_SUCCESS)
     {
@@ -257,15 +266,6 @@ int32 TO_InitApp()
     {
     	(void) CFE_EVS_SendEvent(TO_CR_POOL_ERR_EID, CFE_EVS_ERROR,
         		"Error creating memory pool (0x%08X)",(unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
-
-    iStatus = TO_OutputChannel_InitAll();
-    if (iStatus != CFE_SUCCESS)
-    {
-    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-            "Failed to init Output Channels (0x%08X)",
-            (unsigned int)iStatus);
         goto TO_InitApp_Exit_Tag;
     }
 

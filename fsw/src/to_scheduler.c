@@ -32,8 +32,6 @@ void TO_Scheduler_Run()
 							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
 					if(iStatus == OS_SUCCESS)
 					{
-						//OS_printf("TO_Scheduler_Run  dequeue   (%04x %04x %04x)\n", buf[0], buf[1], buf[2]);
-
 						TO_AppData.Config.PriorityQueue[i].CurrentlyQueuedCnt--;
 						iStatus == TO_OutputChannel_QueueMsg(buffer, channel);
 		            	if(iStatus == CFE_SUCCESS)
