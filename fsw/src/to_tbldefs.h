@@ -14,7 +14,7 @@
 #include "to_platform_cfg.h"
 #include "to_message_flow.h"
 #include "to_priority_queue.h"
-#include "to_output_channel.h"
+#include "to_output_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +52,7 @@ typedef struct
 
 	TO_TlmMessageFlow_t	       MessageFlow[TO_MAX_MESSAGE_FLOWS];
 	TO_TlmPriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
-	TO_TlmOutputChannelQueue_t OutputChannel[TO_MAX_OUTPUT_CHANNELS];
+	TO_TlmOutputQueue_t        OutputChannel;
 } TO_ConfigTbl_t;
 
 /** \brief Definition for Critical Data Storage (CDS) table entry */

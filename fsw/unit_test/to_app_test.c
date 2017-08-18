@@ -621,11 +621,8 @@ void Test_TO_ProcessNewAppCmds_Reset_Nominal(void)
 		TO_AppData.Config.PriorityQueue[i].HighwaterMark = 9;
 	}
 
-	for(i=0; i < TO_MAX_OUTPUT_CHANNELS; ++i)
-	{
-		TO_AppData.Config.OutputChannel[i].SentCount = 10;
-		TO_AppData.Config.OutputChannel[i].HighwaterMark = 11;
-	}
+	TO_AppData.Config.OutputChannel.SentCount = 10;
+	TO_AppData.Config.OutputChannel.HighwaterMark = 11;
 
     /* Execute the function being tested */
     TO_AppMain();
@@ -652,11 +649,8 @@ void Test_TO_ProcessNewAppCmds_Reset_Nominal(void)
 		UtAssert_True(TO_AppData.Config.PriorityQueue[i].HighwaterMark == 0, "TO_AppData.Config.PriorityQueue[i].HighwaterMark == 0");
 	}
 
-	for(i=0; i < TO_MAX_OUTPUT_CHANNELS; ++i)
-	{
-		UtAssert_True(TO_AppData.Config.OutputChannel[i].SentCount == 0, "TO_AppData.Config.OutputChannel[i].SentCount == 0");
-		UtAssert_True(TO_AppData.Config.OutputChannel[i].HighwaterMark == 0, "TO_AppData.Config.OutputChannel[i].HighwaterMark == 0");
-	}
+	UtAssert_True(TO_AppData.Config.OutputChannel.SentCount == 0, "TO_AppData.Config.OutputChannel[i].SentCount == 0");
+	UtAssert_True(TO_AppData.Config.OutputChannel.HighwaterMark == 0, "TO_AppData.Config.OutputChannel[i].HighwaterMark == 0");
 }
 
 
@@ -947,13 +941,12 @@ void Test_TO_ProcessNewAppCmds_QueryChannelQueue_Nominal(void)
 
     /* Verify results */
     UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
-    sprintf(expEventText, "OCI=%u S=%u ML=%u SC=%u CQC=%u HWM=%u",
+    sprintf(expEventText, "OCI=%u ML=%u SC=%u CQC=%u HWM=%u",
     		ChannelIdx,
-    		TO_AppData.Config.OutputChannel[ChannelIdx].State,
-    		TO_AppData.Config.OutputChannel[ChannelIdx].MsgLimit,
-    		TO_AppData.Config.OutputChannel[ChannelIdx].SentCount,
-    		TO_AppData.Config.OutputChannel[ChannelIdx].CurrentlyQueuedCnt,
-    		TO_AppData.Config.OutputChannel[ChannelIdx].HighwaterMark);
+    		TO_AppData.Config.OutputChannel.MsgLimit,
+    		TO_AppData.Config.OutputChannel.SentCount,
+    		TO_AppData.Config.OutputChannel.CurrentlyQueuedCnt,
+    		TO_AppData.Config.OutputChannel.HighwaterMark);
 
     UtAssert_EventSent(TO_OUT_CH_INFO_EID, CFE_EVS_INFORMATION, expEventText, "Query Output Queue Cmd Event Sent");
 }

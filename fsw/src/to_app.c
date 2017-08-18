@@ -18,7 +18,7 @@
 #include "to_classifier.h"
 #include "to_priority_queue.h"
 #include "to_scheduler.h"
-#include "to_output_channel.h"
+#include "to_output_queue.h"
 #include "to_custom.h"
 
 /************************************************************************
@@ -612,8 +612,7 @@ void TO_ReportHousekeeping()
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_ProcessTelemetry()
 {
-	TO_Classifier_Run();
-	TO_Scheduler_Run();
+	TO_Channel_ProcessAll();
 }
 
 

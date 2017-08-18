@@ -20,26 +20,16 @@
 *************************************************************************/
 
 /**
-** \brief Output channel state.  Used to determine if a table entry is used or not.
-*/
-typedef enum
-{
-	TO_OUT_CHANNEL_UNUSED = 0,
-	TO_OUT_CHANNEL_ENA = 1,
-} TO_OutputChannelState_t;
-
-/**
 ** \brief Definition for a single output channel queue entry.
 */
 typedef struct
 {
-	TO_OutputChannelState_t State;
 	uint16					MsgLimit;
 	uint16					SentCount;
 	uint16					CurrentlyQueuedCnt;
     uint16					HighwaterMark;
     uint32					OSALQueueID;
-} TO_TlmOutputChannelQueue_t;
+} TO_TlmOutputQueue_t;
 
 /************************************************************************
 ** External Global Variables
@@ -62,19 +52,7 @@ typedef struct
 **  \param [in]   Size          Size of the message, in bytes, to push.
 **
 *************************************************************************/
-int32 TO_OutputChannel_Push(uint32 ChannelIdx, const char* Buffer, uint32 Size);
-
-
-
-/************************************************************************/
-/** \brief Initialize all output channels.
-**
-**  \par Description
-**       This function is call at initialization to initialize internal
-**       variables.
-**
-*************************************************************************/
-int32 TO_OutputChannel_InitAll(void);
+int32 TO_OutputQueue_Push(const char* Buffer, uint32 Size);
 
 
 
@@ -86,7 +64,7 @@ int32 TO_OutputChannel_InitAll(void);
 **       the queue, deallocating each message its popped off the queue.
 **
 *************************************************************************/
-void  TO_OutputChannel_CleanupAll(void);
+void  TO_OutputQueue_CleanupAll(void);
 
 
 
@@ -112,7 +90,7 @@ void  TO_OutputChannel_ResetCountsAll(void);
 **       deallocate the messages contained in the queues.
 **
 *************************************************************************/
-int32 TO_OutputChannel_TeardownAll(void);
+int32 TO_OutputQueue_Teardown(uint32 idx);
 
 
 
@@ -152,7 +130,7 @@ int32 TO_OutputChannel_BuildupAll(void);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputChannelQueue_t* OutChannel);
+int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputQueue_t* OutChannel);
 
 
 

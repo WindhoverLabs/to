@@ -4,6 +4,8 @@ add_airliner_app_def(to
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_channel.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_channel.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_classifier.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_classifier.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_config_utils.c
@@ -13,8 +15,8 @@ add_airliner_app_def(to
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_message_flow.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_message_flow.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_msg.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_channel.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_channel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_queue.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_queue.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_priority_queue.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_priority_queue.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_private_ids.h
@@ -51,12 +53,14 @@ add_airliner_app_unit_test(to-ut
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/ut_cfe_es_hooks_ex.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_channel.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_channel.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_classifier.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_classifier.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_message_flow.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_message_flow.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_channel.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_channel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_queue.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_output_queue.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_priority_queue.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_priority_queue.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_scheduler.c

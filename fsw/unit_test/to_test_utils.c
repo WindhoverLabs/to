@@ -66,9 +66,9 @@ TO_ConfigTbl_t TO_EmptyConfigTable =
 	{
 		/* Output Channels */
 		/* TO_CHANNEL_GROUND */
-		{TO_OUT_CHANNEL_ENA, 10, 0, 0, 0},
+		{10, 0, 0, 0},
 		/* TO_CHANNEL_ONBOARD */
-		{TO_OUT_CHANNEL_ENA, 10, 0, 0, 0}
+		{10, 0, 0, 0}
 	}
 };
 
@@ -127,9 +127,9 @@ TO_ConfigTbl_t TO_FullConfigTable =
 	{
 		/* Output Channels */
 		/* TO_CHANNEL_GROUND */
-		{TO_OUT_CHANNEL_ENA, 10, 0, 0, 0},
+		{10, 0, 0, 0},
 		/* TO_CHANNEL_ONBOARD */
-		{TO_OUT_CHANNEL_ENA, 10, 0, 0, 0}
+		{10, 0, 0, 0}
 	}
 };
 

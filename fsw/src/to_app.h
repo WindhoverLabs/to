@@ -25,7 +25,7 @@
 #include "to_classifier.h"
 #include "to_priority_queue.h"
 #include "to_scheduler.h"
-#include "to_output_channel.h"
+#include "to_output_queue.h"
 #include "to_custom.h"
 
 #ifdef __cplusplus
