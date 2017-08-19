@@ -10,7 +10,7 @@
 /* Run the Classifier algorithm                                    */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void TO_Classifier_Run()
+void TO_Classifier_Run(TO_ChannelData_t* channel)
 {
     int32 iStatus = CFE_SUCCESS;
     CFE_SB_MsgPtr_t   DataMsgPtr=NULL;
@@ -33,7 +33,7 @@ void TO_Classifier_Run()
         	 * Message ID is not in the table at all so we shouldn't have
         	 * received this message.  Raise an event.
         	 */
-    		msgFlow = TO_MessageFlow_GetNextObject(DataMsgID, &Cursor);
+    		msgFlow = TO_MessageFlow_GetNextObject(channel, DataMsgID, &Cursor);
 			if(msgFlow == 0)
 			{
 				Cursor = -1;
@@ -47,7 +47,7 @@ void TO_Classifier_Run()
         	while(Cursor > 0)
         	{
         		/* Get the Priority Queue assigned to this Message Flow. */
-				pqueue = TO_MessageFlow_GetPQueue(msgFlow);
+				pqueue = TO_MessageFlow_GetPQueue(channel, msgFlow);
 				if(pqueue != 0)
 				{
 					/* Queue the message. */
@@ -79,7 +79,7 @@ void TO_Classifier_Run()
 					CFE_EVS_SendEvent(TO_MSG_DROP_FROM_FLOW_DBG_EID, CFE_EVS_ERROR,
 								  "PQ not found.  Dropped message 0x%04x", (unsigned int)DataMsgID);
 				}
-	    		msgFlow = TO_MessageFlow_GetNextObject(DataMsgID, &Cursor);
+	    		msgFlow = TO_MessageFlow_GetNextObject(channel, DataMsgID, &Cursor);
         	}
         }
         else if (iStatus == CFE_SB_NO_MESSAGE)

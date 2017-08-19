@@ -16,6 +16,8 @@
 ** Local Defines
 *************************************************************************/
 
+typedef struct TO_ChannelData_t TO_ChannelData_t;
+
 /************************************************************************
 ** Local Structure Definitions
 *************************************************************************/
@@ -82,7 +84,7 @@ int32 TO_MessageFlow_TeardownAll(void);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_MessageFlow_BuildupAll(void);
+int32 TO_MessageFlow_Buildup(TO_ChannelData_t* channel);
 
 
 
@@ -119,7 +121,7 @@ void TO_MessageFlow_CleanupAll(void);
 **  \endreturns
 **
 *************************************************************************/
-TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(CFE_SB_MsgId_t MsgID, uint32 *Cursor);
+TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *Cursor);
 
 
 
@@ -141,7 +143,7 @@ TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(CFE_SB_MsgId_t MsgID, uint32 *
 **  \endreturns
 **
 *************************************************************************/
-TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
+TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
 
 
 
@@ -161,7 +163,7 @@ TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(CFE_SB_MsgId_t MsgID, uint16 PQueu
 **  \endreturns
 **
 *************************************************************************/
-TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_TlmMessageFlow_t *MsgFlow);
+TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_ChannelData_t* channel, TO_TlmMessageFlow_t *MsgFlow);
 
 
 
@@ -185,7 +187,7 @@ TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_TlmMessageFlow_t *MsgFlow);
 **  \endreturns
 **
 *************************************************************************/
-boolean TO_MessageFlow_Add(CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueIdx);
+boolean TO_MessageFlow_Add(TO_ChannelData_t *channel, CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueIdx);
 
 
 
@@ -207,7 +209,7 @@ boolean TO_MessageFlow_Add(CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueI
 **  \endreturns
 **
 *************************************************************************/
-boolean TO_MessageFlow_Remove(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
+boolean TO_MessageFlow_Remove(TO_ChannelData_t *channel, CFE_SB_MsgId_t MsgID, uint16 PQueueIdx);
 
 
 

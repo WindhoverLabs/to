@@ -28,16 +28,6 @@ extern "C" {
  */
 #define TO_CONFIG_TABLE_MAX_ENTRIES  (1)
 
-/**
- * \brief Defines the table identification name used for table registration.
- */
-#define TO_CONFIG_TABLENAME          ("CONFIG_TBL")
-
-/**
- * \brief Defines the table file name used for table registration.
- */
-#define TO_CDS_TABLENAME  ("to_CdsTbl")
-
 
 /************************************************************************
 ** Local Structure Declarations
@@ -52,16 +42,8 @@ typedef struct
 
 	TO_TlmMessageFlow_t	       MessageFlow[TO_MAX_MESSAGE_FLOWS];
 	TO_TlmPriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
-	TO_TlmOutputQueue_t        OutputChannel;
-} TO_ConfigTbl_t;
-
-/** \brief Definition for Critical Data Storage (CDS) table entry */
-typedef struct
-{
-    int32  iParam;
-
-    /* TODO:  Add type declaration for CDS data here. */
-} TO_CdsTbl_t;
+	TO_TlmOutputQueue_t        OutputQueue;
+} TO_ChannelTbl_t;
 
 /************************************************************************
 ** External Global Variables

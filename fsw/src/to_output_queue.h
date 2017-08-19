@@ -1,5 +1,5 @@
-#ifndef TO_OUTPUT_CHANNEL_H
-#define TO_OUTPUT_CHANNEL_H
+#ifndef TO_OUTPUT_QUEUE_H
+#define TO_OUTPUT_QUEUE_H
 
 /************************************************************************
 ** Pragmas
@@ -130,7 +130,7 @@ int32 TO_OutputChannel_BuildupAll(void);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_OutputChannel_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputQueue_t* OutChannel);
+int32 TO_OutputQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputQueue_t* OutChannel);
 
 
 

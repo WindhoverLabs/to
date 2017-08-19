@@ -20,6 +20,7 @@
 #include "to_scheduler.h"
 #include "to_output_queue.h"
 #include "to_custom.h"
+#include "to_channel.h"
 
 /************************************************************************
 ** Local Defines
@@ -236,24 +237,6 @@ int32 TO_InitApp()
         goto TO_InitApp_Exit_Tag;
     }
 
-    iStatus = TO_OutputChannel_InitAll();
-    if (iStatus != CFE_SUCCESS)
-    {
-    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-            "Failed to init Output Channels (0x%08X)",
-            (unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
-
-    iStatus = TO_InitConfigTbl();
-    if (iStatus != CFE_SUCCESS)
-    {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-                                 "Failed to init config tables (0x%08X)",
-                                 (unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
-
     TO_InitData();
 
     /* Initialize the memory pool for the priority queues and output channel
@@ -266,6 +249,15 @@ int32 TO_InitApp()
     {
     	(void) CFE_EVS_SendEvent(TO_CR_POOL_ERR_EID, CFE_EVS_ERROR,
         		"Error creating memory pool (0x%08X)",(unsigned int)iStatus);
+        goto TO_InitApp_Exit_Tag;
+    }
+
+    iStatus = TO_Custom_Init();
+    if (iStatus != CFE_SUCCESS)
+    {
+    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+            "Failed to init custom layer (0x%08X)",
+            (unsigned int)iStatus);
         goto TO_InitApp_Exit_Tag;
     }
 
@@ -313,10 +305,10 @@ TO_InitApp_Exit_Tag:
 
 void TO_CleanupCallback()
 {
-	TO_MessageFlow_TeardownAll();
-	TO_PriorityQueue_TeardownAll();
-	TO_OutputChannel_TeardownAll();
-	TO_OutputChannel_CustomCleanupAll();
+//	TO_MessageFlow_TeardownAll();
+//	TO_PriorityQueue_TeardownAll();
+//	TO_OutputChannel_TeardownAll();
+//	TO_OutputChannel_CustomCleanupAll();
 }
 
 
@@ -335,17 +327,21 @@ int32 TO_RcvMsg(int32 iBlocking)
     /* Stop Performance Log entry */
     CFE_ES_PerfLogExit(TO_MAIN_TASK_PERF_ID);
 
+	TO_ReleaseAllTables();
+
     /* Wait for WakeUp messages from scheduler */
     iStatus = CFE_SB_RcvMsg(&MsgPtr, TO_AppData.SchPipeId, iBlocking);
 
     /* Start Performance Log entry */
     CFE_ES_PerfLogEntry(TO_MAIN_TASK_PERF_ID);
 
+	TO_AcquireAllTables();
+
     if (iStatus == CFE_SUCCESS)
     {
         MsgId = CFE_SB_GetMsgId(MsgPtr);
         switch (MsgId)
-	{
+        {
             case TO_SEND_TLM_MID:
                 TO_ProcessNewCmds();
                 TO_ProcessTelemetry();
@@ -362,7 +358,7 @@ int32 TO_RcvMsg(int32 iBlocking)
     }
     else if (iStatus == CFE_SB_NO_MESSAGE)
     {
-        /* TODO: If there's no incoming message, you can do something here, or 
+        /* TODO: If there's no incoming message, you can do something here, or
          * nothing.  Note, this section is dead code only if the iBlocking arg
          * is CFE_SB_PEND_FOREVER. */
         iStatus = CFE_SUCCESS;
@@ -370,7 +366,7 @@ int32 TO_RcvMsg(int32 iBlocking)
     else if (iStatus == CFE_SB_TIME_OUT)
     {
         /* TODO: If there's no incoming message within a specified time (via the
-         * iBlocking arg, you can do something here, or nothing.  
+         * iBlocking arg, you can do something here, or nothing.
          * Note, this section is dead code only if the iBlocking arg
          * is CFE_SB_PEND_FOREVER. */
         iStatus = CFE_SUCCESS;
@@ -398,53 +394,53 @@ int32 TO_RcvMsg(int32 iBlocking)
 
 void TO_ProcessNewCmds()
 {
-    int iStatus = CFE_SUCCESS;
-    CFE_SB_Msg_t*   CmdMsgPtr=NULL;
-    CFE_SB_MsgId_t  CmdMsgId;
-
-    /* Process command messages till the pipe is empty */
-    while (1)
-    {
-        iStatus = CFE_SB_RcvMsg(&CmdMsgPtr, TO_AppData.CmdPipeId, CFE_SB_POLL);
-        if(iStatus == CFE_SUCCESS)
-        {
-            CmdMsgId = CFE_SB_GetMsgId(CmdMsgPtr);
-            switch (CmdMsgId)
-            {
-                case TO_CMD_MID:
-                    TO_ProcessNewAppCmds(CmdMsgPtr);
-                    break;
-
-                /* TODO:  Add code to process other subscribed commands here
-                **
-                ** Example:
-                **     case CFE_TIME_DATA_CMD_MID:
-                **         TO_ProcessTimeDataCmd(CmdMsgPtr);
-                **         break;
-                */
-
-                default:
-                    /* Bump the command error counter for an unknown command.
-                     * (This should only occur if it was subscribed to with this
-                     *  pipe, but not handled in this switch-case.) */
-                    TO_AppData.HkTlm.usCmdErrCnt++;
-                    (void) CFE_EVS_SendEvent(TO_MSGID_ERR_EID, CFE_EVS_ERROR,
-                                      "Recvd invalid CMD msgId (0x%04X)", (unsigned short)CmdMsgId);
-                    break;
-            }
-        }
-        else if (iStatus == CFE_SB_NO_MESSAGE)
-        {
-            break;
-        }
-        else
-        {
-            (void) CFE_EVS_SendEvent(TO_PIPE_ERR_EID, CFE_EVS_ERROR,
-                  "CMD pipe read error (0x%08X)", (unsigned int)iStatus);
-            TO_AppData.uiRunStatus = CFE_ES_APP_ERROR;
-            break;
-        }
-    }
+//    int iStatus = CFE_SUCCESS;
+//    CFE_SB_Msg_t*   CmdMsgPtr=NULL;
+//    CFE_SB_MsgId_t  CmdMsgId;
+//
+//    /* Process command messages till the pipe is empty */
+//    while (1)
+//    {
+//        iStatus = CFE_SB_RcvMsg(&CmdMsgPtr, TO_AppData.CmdPipeId, CFE_SB_POLL);
+//        if(iStatus == CFE_SUCCESS)
+//        {
+//            CmdMsgId = CFE_SB_GetMsgId(CmdMsgPtr);
+//            switch (CmdMsgId)
+//            {
+//                case TO_CMD_MID:
+//                    TO_ProcessNewAppCmds(CmdMsgPtr);
+//                    break;
+//
+//                /* TODO:  Add code to process other subscribed commands here
+//                **
+//                ** Example:
+//                **     case CFE_TIME_DATA_CMD_MID:
+//                **         TO_ProcessTimeDataCmd(CmdMsgPtr);
+//                **         break;
+//                */
+//
+//                default:
+//                    /* Bump the command error counter for an unknown command.
+//                     * (This should only occur if it was subscribed to with this
+//                     *  pipe, but not handled in this switch-case.) */
+//                    TO_AppData.HkTlm.usCmdErrCnt++;
+//                    (void) CFE_EVS_SendEvent(TO_MSGID_ERR_EID, CFE_EVS_ERROR,
+//                                      "Recvd invalid CMD msgId (0x%04X)", (unsigned short)CmdMsgId);
+//                    break;
+//            }
+//        }
+//        else if (iStatus == CFE_SB_NO_MESSAGE)
+//        {
+//            break;
+//        }
+//        else
+//        {
+//            (void) CFE_EVS_SendEvent(TO_PIPE_ERR_EID, CFE_EVS_ERROR,
+//                  "CMD pipe read error (0x%08X)", (unsigned int)iStatus);
+//            TO_AppData.uiRunStatus = CFE_ES_APP_ERROR;
+//            break;
+//        }
+//    }
 }
 
 
@@ -456,134 +452,134 @@ void TO_ProcessNewCmds()
 
 void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
 {
-    uint32  uiCmdCode=0;
-
-    if (MsgPtr != NULL)
-    {
-        uiCmdCode = CFE_SB_GetCmdCode(MsgPtr);
-        switch (uiCmdCode)
-        {
-            case TO_NOOP_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
-            	{
-					TO_AppData.HkTlm.usCmdCnt++;
-					(void) CFE_EVS_SendEvent(TO_CMD_NOOP_EID, CFE_EVS_INFORMATION,
-									  "Executed NOOP cmd (%u), Version %d.%d.%d.%d",
-									  (unsigned int)uiCmdCode,
-									  TO_MAJOR_VERSION,
-									  TO_MINOR_VERSION,
-									  TO_REVISION,
-									  TO_MISSION_REV);
-            	}
-                break;
-
-            case TO_RESET_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
-            	{
-					TO_AppData.HkTlm.usCmdCnt = 0;
-					TO_AppData.HkTlm.usCmdErrCnt = 0;
-					TO_AppData.HkTlm.usTotalMsgDropped = 0;
-					TO_AppData.HkTlm.usNoSerFuncCnt = 0;
-					TO_MessageFlow_ResetCountsAll();
-					TO_PriorityQueue_ResetCountsAll();
-					TO_OutputChannel_ResetCountsAll();
-
-					(void) CFE_EVS_SendEvent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION,
-									  "Executed RESET cmd (%u)", (unsigned int)uiCmdCode);
-            	}
-                break;
-
-            case TO_ADD_MESSAGE_FLOW_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_AddMessageFlowCmd_t)))
-            	{
-            		TO_AddMessageFlowCmd_t *cmd = (TO_AddMessageFlowCmd_t*)MsgPtr;
-
-            		if(TO_MessageFlow_Add(cmd->MsgID, cmd->MsgLimit, cmd->PQueueIdx) == FALSE)
-            		{
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-            		}
-            		else
-            		{
-            			TO_AppData.HkTlm.usCmdCnt++;
-    					(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_INFORMATION,
-    									  "Executed ADD_MESSAGE cmd (%u)", (unsigned int)uiCmdCode);
-            		}
-            	}
-            	break;
-
-            case TO_REMOVE_MESSAGE_FLOW_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_RemoveMessageFlowCmd_t)))
-            	{
-            		TO_RemoveMessageFlowCmd_t *cmd = (TO_RemoveMessageFlowCmd_t*)MsgPtr;
-
-            		if(TO_MessageFlow_Remove(cmd->MsgID, cmd->PQueueIdx) == FALSE)
-            		{
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-            		}
-            		else
-            		{
-            			TO_AppData.HkTlm.usCmdCnt++;
-    					(void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID, CFE_EVS_INFORMATION,
-    									  "Executed ADD_REMOVE cmd (%u)", (unsigned int)uiCmdCode);
-            		}
-            	}
-            	break;
-
-            case TO_QUERY_MESSAGE_FLOW_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryMessageFlowCmd_t)))
-            	{
-            		TO_QueryMessageFlowCmd_t *cmd = (TO_QueryMessageFlowCmd_t*)MsgPtr;
-
-            		if(TO_MessageFlow_Query(cmd->MsgID, cmd->PQueueIdx) == FALSE)
-            		{
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-            		}
-            		else
-            		{
-            			TO_AppData.HkTlm.usCmdCnt++;
-            		}
-            	}
-            	break;
-
-            case TO_QUERY_PRIORITY_QUEUE_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryPriorityQueueCmd_t)))
-            	{
-            		TO_QueryPriorityQueueCmd_t *cmd = (TO_QueryPriorityQueueCmd_t*)MsgPtr;
-
-            		if(TO_PriorityQueue_Query(cmd->PQueueIndex) == FALSE)
-            		{
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-            		}
-            		else
-            		{
-            			TO_AppData.HkTlm.usCmdCnt++;
-            		}
-            	}
-            	break;
-
-            case TO_QUERY_OUTPUT_CHANNEL_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryOutputChannelCmd_t)))
-            	{
-            		TO_QueryOutputChannelCmd_t *cmd = (TO_QueryOutputChannelCmd_t*)MsgPtr;
-
-            		if(TO_OutputChannel_Query(cmd->OutputChannelIndex) == FALSE)
-            		{
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-            		}
-            		else
-            		{
-            			TO_AppData.HkTlm.usCmdCnt++;
-            		}
-            	}
-            	break;
-
-            /* TODO:  Add code to process the rest of the TO commands here */
-
-            default:
-            	TO_OutputChannel_ProcessNewCustomCmds(MsgPtr);
-                break;
-        }
-    }
+//    uint32  uiCmdCode=0;
+//
+//    if (MsgPtr != NULL)
+//    {
+//        uiCmdCode = CFE_SB_GetCmdCode(MsgPtr);
+//        switch (uiCmdCode)
+//        {
+//            case TO_NOOP_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
+//            	{
+//					TO_AppData.HkTlm.usCmdCnt++;
+//					(void) CFE_EVS_SendEvent(TO_CMD_NOOP_EID, CFE_EVS_INFORMATION,
+//									  "Executed NOOP cmd (%u), Version %d.%d.%d.%d",
+//									  (unsigned int)uiCmdCode,
+//									  TO_MAJOR_VERSION,
+//									  TO_MINOR_VERSION,
+//									  TO_REVISION,
+//									  TO_MISSION_REV);
+//            	}
+//                break;
+//
+//            case TO_RESET_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
+//            	{
+//					TO_AppData.HkTlm.usCmdCnt = 0;
+//					TO_AppData.HkTlm.usCmdErrCnt = 0;
+//					TO_AppData.HkTlm.usTotalMsgDropped = 0;
+//					TO_AppData.HkTlm.usNoSerFuncCnt = 0;
+//					TO_MessageFlow_ResetCountsAll();
+//					TO_PriorityQueue_ResetCountsAll();
+//					//TO_OutputChannel_ResetCountsAll();
+//
+//					(void) CFE_EVS_SendEvent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION,
+//									  "Executed RESET cmd (%u)", (unsigned int)uiCmdCode);
+//            	}
+//                break;
+//
+//            case TO_ADD_MESSAGE_FLOW_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_AddMessageFlowCmd_t)))
+//            	{
+//            		TO_AddMessageFlowCmd_t *cmd = (TO_AddMessageFlowCmd_t*)MsgPtr;
+//
+//            		if(TO_MessageFlow_Add(cmd->MsgID, cmd->MsgLimit, cmd->PQueueIdx) == FALSE)
+//            		{
+//            			TO_AppData.HkTlm.usCmdErrCnt++;
+//            		}
+//            		else
+//            		{
+//            			TO_AppData.HkTlm.usCmdCnt++;
+//    					(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_INFORMATION,
+//    									  "Executed ADD_MESSAGE cmd (%u)", (unsigned int)uiCmdCode);
+//            		}
+//            	}
+//            	break;
+//
+//            case TO_REMOVE_MESSAGE_FLOW_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_RemoveMessageFlowCmd_t)))
+//            	{
+//            		TO_RemoveMessageFlowCmd_t *cmd = (TO_RemoveMessageFlowCmd_t*)MsgPtr;
+//
+//            		if(TO_MessageFlow_Remove(cmd->MsgID, cmd->PQueueIdx) == FALSE)
+//            		{
+//            			TO_AppData.HkTlm.usCmdErrCnt++;
+//            		}
+//            		else
+//            		{
+//            			TO_AppData.HkTlm.usCmdCnt++;
+//    					(void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID, CFE_EVS_INFORMATION,
+//    									  "Executed ADD_REMOVE cmd (%u)", (unsigned int)uiCmdCode);
+//            		}
+//            	}
+//            	break;
+//
+//            case TO_QUERY_MESSAGE_FLOW_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryMessageFlowCmd_t)))
+//            	{
+//            		TO_QueryMessageFlowCmd_t *cmd = (TO_QueryMessageFlowCmd_t*)MsgPtr;
+//
+//            		if(TO_MessageFlow_Query(cmd->MsgID, cmd->PQueueIdx) == FALSE)
+//            		{
+//            			TO_AppData.HkTlm.usCmdErrCnt++;
+//            		}
+//            		else
+//            		{
+//            			TO_AppData.HkTlm.usCmdCnt++;
+//            		}
+//            	}
+//            	break;
+//
+//            case TO_QUERY_PRIORITY_QUEUE_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryPriorityQueueCmd_t)))
+//            	{
+//            		TO_QueryPriorityQueueCmd_t *cmd = (TO_QueryPriorityQueueCmd_t*)MsgPtr;
+//
+//            		if(TO_PriorityQueue_Query(cmd->PQueueIndex) == FALSE)
+//            		{
+//            			TO_AppData.HkTlm.usCmdErrCnt++;
+//            		}
+//            		else
+//            		{
+//            			TO_AppData.HkTlm.usCmdCnt++;
+//            		}
+//            	}
+//            	break;
+//
+//            case TO_QUERY_OUTPUT_CHANNEL_CC:
+//            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryOutputChannelCmd_t)))
+//            	{
+//            		TO_QueryOutputChannelCmd_t *cmd = (TO_QueryOutputChannelCmd_t*)MsgPtr;
+//
+//            		if(TO_OutputChannel_Query(cmd->OutputChannelIndex) == FALSE)
+//            		{
+//            			TO_AppData.HkTlm.usCmdErrCnt++;
+//            		}
+//            		else
+//            		{
+//            			TO_AppData.HkTlm.usCmdCnt++;
+//            		}
+//            	}
+//            	break;
+//
+//            /* TODO:  Add code to process the rest of the TO commands here */
+//
+//            default:
+//            	TO_OutputChannel_ProcessNewCustomCmds(MsgPtr);
+//                break;
+//        }
+//    }
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -594,14 +590,14 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
 
 void TO_ReportHousekeeping()
 {
-    /* TODO:  Add code to update housekeeping data, if needed, here.  */
-
-    CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
-    int32 iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
-    if (iStatus != CFE_SUCCESS)
-    {
-        /* TODO: Decide what to do if the send message fails. */
-    }
+//    /* TODO:  Add code to update housekeeping data, if needed, here.  */
+//
+//    CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
+//    int32 iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
+//    if (iStatus != CFE_SUCCESS)
+//    {
+//        /* TODO: Decide what to do if the send message fails. */
+//    }
 }
 
 
@@ -612,7 +608,18 @@ void TO_ReportHousekeeping()
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_ProcessTelemetry()
 {
-	TO_Channel_ProcessAll();
+    int32 iStatus = CFE_SUCCESS;
+    uint32 i = 0;
+
+    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+	    TO_ChannelData_t *channel = &TO_AppData.ChannelData[i];
+	    if(channel->State == TO_CHANNEL_OPENED)
+	    {
+	    	TO_Classifier_Run(channel);
+	    	TO_Scheduler_Run(channel);
+	    }
+    }
 }
 
 
@@ -723,13 +730,6 @@ void TO_AppMain()
         if (iStatus != CFE_SUCCESS)
         {
             /* TODO: Decide what to do for other return values in TO_RcvMsg(). */
-        }
-
-        iStatus = TO_AcquireConfigPointers();
-        if(iStatus != CFE_SUCCESS)
-        {
-            /* We apparently tried to load a new table but failed.  Terminate the application. */
-            TO_AppData.uiRunStatus = CFE_ES_APP_ERROR;
         }
     }
 

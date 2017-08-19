@@ -37,7 +37,7 @@
 **       layers will do anything in this function.
 **
 *************************************************************************/
-int32 TO_OutputChannel_CustomInitAll(void);
+int32 TO_Custom_Init(void);
 
 
 

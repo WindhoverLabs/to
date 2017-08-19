@@ -28,9 +28,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TO_CONFIG_
-#define _TO_CONFIG_
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -61,8 +58,8 @@ extern "C" {
 
 CFE_TBL_FileDef_t CFE_TBL_FileDef =
 {
-    "to_ConfigTable", "TO.to_config", "TO config table",
-    "to_config.tbl", sizeof(TO_Table_t)
+    "to_ConfigTable", "TO.to_onboard", "TO onboard table",
+    "to_onboard.tbl", sizeof(TO_Table_t)
 };
 
 /*
@@ -426,12 +423,7 @@ TO_Table_t to_ConfigTable =
 		{ TO_QUEUE_UNUSED,    0,    0, 0, 0, 0, 0, 0},
 		{ TO_QUEUE_UNUSED,    0,    0, 0, 0, 0, 0, 0}
 	},
-	{
-		{TO_CHANNEL_ENABLED, "127.0.0.1", 14550, 0 },
-		{TO_CHANNEL_ENABLED, "127.0.0.1",  5011, 0 },
-		{TO_CHANNEL_ENABLED, "127.0.0.1",  5012, 0 },
-		{TO_CHANNEL_ENABLED, "127.0.0.1",  1234, 0 }
-	}
+	{"127.0.0.1", 5011, 0 }
 };
 
 
@@ -455,5 +447,3 @@ TO_Table_t to_ConfigTable =
 #ifdef	__cplusplus
 }
 #endif
-
-#endif /* _TO_CONFIG_ */

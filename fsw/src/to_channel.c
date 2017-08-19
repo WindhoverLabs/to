@@ -1,30 +1,29 @@
 #include "to_app.h"
 #include "to_channel.h"
 
-
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* Run the Classifier algorithm                                    */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void TO_Channel_ProcessAll()
+int32 TO_Channel_OpenChannel(uint32 index, char *TableName, char *TableFileName)
 {
-    uint32 i = 0;
+	uint32 iStatus = 0;
 
-    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+	strncpy(TO_AppData.ChannelData[index].TableName,
+			TableName, sizeof(TO_AppData.ChannelData[index].TableName));
+	strncpy(TO_AppData.ChannelData[index].TableFileName,
+			TableFileName, sizeof(TO_AppData.ChannelData[index].TableFileName));
+
+	TO_AppData.ChannelData[index].State = TO_CHANNEL_OPENED;
+
+    iStatus = TO_InitConfigTbl(&TO_AppData.ChannelData[index]);
+    if (iStatus != CFE_SUCCESS)
     {
-        TO_Channel_ProcessChannel(i);
+        CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+                          "Failed to init config tables (0x%08X)",
+                          (unsigned int)iStatus);
     }
+
+	return iStatus;
 }
-
-
-void TO_Channel_Process(uint32 idx)
-{
-    if(idx < TO_MAX_CHANNELS)
-    {
-    	TO_Classifier_Run();
-    	TO_Scheduler_Run();
-    }
-}
-

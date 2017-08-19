@@ -10,36 +10,36 @@
 /* Run the Scheduler algorithm                                     */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void TO_Scheduler_Run()
+void TO_Scheduler_Run(TO_ChannelData_t *channel)
 {
 	uint32 i = 0;
 
 	for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
 	{
 		int32 iStatus = 0;
-		TO_TlmPriorityQueue_t *pqueue = &TO_AppData.Config.PriorityQueue[i];
+		TO_TlmPriorityQueue_t *pqueue = &channel->ConfigTblPtr->PriorityQueue[i];
 		if(pqueue->State != TO_PQUEUE_UNUSED)
 		{
 			if(pqueue->OSALQueueID !=0)
 			{
-				TO_TlmOutputChannelQueue_t *channel = &TO_AppData.Config.OutputChannel[pqueue->ChannelID];
+				TO_TlmOutputQueue_t *oqueue = &channel->ConfigTblPtr->OutputQueue;
 				void *buffer;
 				uint32 bufferSize = 0;
-				while((iStatus == OS_SUCCESS) && (channel->CurrentlyQueuedCnt < channel->MsgLimit))
+				while((iStatus == OS_SUCCESS) && (oqueue->CurrentlyQueuedCnt < oqueue->MsgLimit))
 				{
 					iStatus =  OS_QueueGet(
-							TO_AppData.Config.PriorityQueue[i].OSALQueueID,
+							channel->ConfigTblPtr->PriorityQueue[i].OSALQueueID,
 							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
 					if(iStatus == OS_SUCCESS)
 					{
-						TO_AppData.Config.PriorityQueue[i].CurrentlyQueuedCnt--;
-						iStatus == TO_OutputChannel_QueueMsg(buffer, channel);
+						channel->ConfigTblPtr->PriorityQueue[i].CurrentlyQueuedCnt--;
+						iStatus == TO_OutputQueue_QueueMsg(buffer, oqueue);
 		            	if(iStatus == CFE_SUCCESS)
 		            	{
-		            		channel->CurrentlyQueuedCnt++;
-		                	if(channel->HighwaterMark < channel->CurrentlyQueuedCnt)
+		            		oqueue->CurrentlyQueuedCnt++;
+		                	if(oqueue->HighwaterMark < oqueue->CurrentlyQueuedCnt)
 		                	{
-		                		channel->HighwaterMark++;
+		                		oqueue->HighwaterMark++;
 		                	}
 		            	}
 					}

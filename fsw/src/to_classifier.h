@@ -37,6 +37,6 @@
 **       This will raise error events as errors are encountered.
 **
 *************************************************************************/
-void TO_Classifier_Run(void);
+void TO_Classifier_Run(TO_ChannelData_t* channel);
 
 #endif

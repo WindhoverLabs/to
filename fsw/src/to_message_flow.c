@@ -8,7 +8,7 @@
 /* Build up all the message flows                                  */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-int32 TO_MessageFlow_BuildupAll(void)
+int32 TO_MessageFlow_Buildup(TO_ChannelData_t* channel)
 {
 	uint32 i = 0;
 	int32 iStatus = CFE_SUCCESS;
@@ -18,16 +18,16 @@ int32 TO_MessageFlow_BuildupAll(void)
      */
 	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
 	{
-		if(TO_AppData.Config.MessageFlow[i].MsgId != 0)
+		if(channel->ConfigTblPtr->MessageFlow[i].MsgId != 0)
 		{
 			/* Subscribe to message. */
-			iStatus = CFE_SB_SubscribeEx(TO_AppData.Config.MessageFlow[i].MsgId, TO_AppData.DataPipeId,
-										 CFE_SB_Default_Qos, TO_AppData.Config.MessageFlow[i].MsgLimit);
+			iStatus = CFE_SB_SubscribeEx(channel->ConfigTblPtr->MessageFlow[i].MsgId, TO_AppData.DataPipeId,
+										 CFE_SB_Default_Qos, channel->ConfigTblPtr->MessageFlow[i].MsgLimit);
 			if (iStatus != CFE_SUCCESS)
 			{
 				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
 						"Message flow failed to subscribe to (0x%08X). (%i)",
-						TO_AppData.Config.MessageFlow[i].MsgId,
+						channel->ConfigTblPtr->MessageFlow[i].MsgId,
 						(unsigned int)iStatus);
 				goto end_of_function;
 			}
@@ -50,24 +50,24 @@ int32 TO_MessageFlow_TeardownAll(void)
 	uint32 i = 0;
 	int32 iStatus = CFE_SUCCESS;
 
-	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	{
-		if(TO_AppData.Config.MessageFlow[i].MsgId != 0)
-		{
-			/* Unsubscribe from message. */
-			iStatus =  CFE_SB_Unsubscribe(
-					TO_AppData.Config.MessageFlow[i].MsgId,
-					TO_AppData.DataPipeId);
-			if (iStatus != CFE_SUCCESS)
-			{
-				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-						"Message flow failed to unsubscribe from 0x%08X. (%i)",
-						TO_AppData.Config.MessageFlow[i].MsgId,
-						(unsigned int)iStatus);
-				goto end_of_function;
-			}
-		}
-	}
+//	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
+//	{
+//		if(TO_AppData.Config.MessageFlow[i].MsgId != 0)
+//		{
+//			/* Unsubscribe from message. */
+//			iStatus =  CFE_SB_Unsubscribe(
+//					TO_AppData.Config.MessageFlow[i].MsgId,
+//					TO_AppData.DataPipeId);
+//			if (iStatus != CFE_SUCCESS)
+//			{
+//				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+//						"Message flow failed to unsubscribe from 0x%08X. (%i)",
+//						TO_AppData.Config.MessageFlow[i].MsgId,
+//						(unsigned int)iStatus);
+//				goto end_of_function;
+//			}
+//		}
+//	}
 
 end_of_function:
 	return iStatus;
@@ -94,13 +94,13 @@ void TO_MessageFlow_CleanupAll(void)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void TO_MessageFlow_ResetCountsAll(void)
 {
-	uint32 i = 0;
-
-	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	{
-		TO_AppData.Config.MessageFlow[i].DroppedMsgCnt = 0;
-		TO_AppData.Config.MessageFlow[i].QueuedMsgCnt = 0;
-	}
+//	uint32 i = 0;
+//
+//	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
+//	{
+//		TO_AppData.Config.MessageFlow[i].DroppedMsgCnt = 0;
+//		TO_AppData.Config.MessageFlow[i].QueuedMsgCnt = 0;
+//	}
 }
 
 
@@ -110,7 +110,7 @@ void TO_MessageFlow_ResetCountsAll(void)
 /* Get the next message flow object                                */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(CFE_SB_MsgId_t MsgID, uint32 *Cursor)
+TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *Cursor)
 {
 	TO_TlmMessageFlow_t *outMsgFlow = 0;
 
@@ -127,9 +127,9 @@ TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(CFE_SB_MsgId_t MsgID, uint32 *
 	{
 		for(; *Cursor < TO_MAX_MESSAGE_FLOWS; ++(*Cursor))
 		{
-			if(TO_AppData.Config.MessageFlow[*Cursor].MsgId == MsgID)
+			if(channel->ConfigTblPtr->MessageFlow[*Cursor].MsgId == MsgID)
 			{
-				outMsgFlow = &TO_AppData.Config.MessageFlow[*Cursor];
+				outMsgFlow = &channel->ConfigTblPtr->MessageFlow[*Cursor];
 				/* Increment Cursor so the next call will skip the object we just
 				 * found.
 				 */
@@ -157,29 +157,29 @@ TO_TlmMessageFlow_t* TO_MessageFlow_GetNextObject(CFE_SB_MsgId_t MsgID, uint32 *
 /* Get a specific message flow object                              */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
+TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
 {
 	TO_TlmMessageFlow_t *outMsgFlow = 0;
-	uint32 i = 0;
-
-	if(MsgID == 0)
-	{
-		outMsgFlow = 0;
-	}
-	else
-	{
-		for(i; i < TO_MAX_MESSAGE_FLOWS; ++i)
-		{
-			if(TO_AppData.Config.MessageFlow[i].MsgId == MsgID)
-			{
-				if(TO_AppData.Config.MessageFlow[i].PQueueID == PQueueIdx)
-				{
-					outMsgFlow = &TO_AppData.Config.MessageFlow[i];
-					break;
-				}
-			}
-		}
-	}
+//	uint32 i = 0;
+//
+//	if(MsgID == 0)
+//	{
+//		outMsgFlow = 0;
+//	}
+//	else
+//	{
+//		for(i; i < TO_MAX_MESSAGE_FLOWS; ++i)
+//		{
+//			if(TO_AppData.Config.MessageFlow[i].MsgId == MsgID)
+//			{
+//				if(TO_AppData.Config.MessageFlow[i].PQueueID == PQueueIdx)
+//				{
+//					outMsgFlow = &TO_AppData.Config.MessageFlow[i];
+//					break;
+//				}
+//			}
+//		}
+//	}
 
 	return outMsgFlow;
 }
@@ -191,7 +191,7 @@ TO_TlmMessageFlow_t* TO_MessageFlow_GetObject(CFE_SB_MsgId_t MsgID, uint16 PQueu
 /* Get the priority queue for a specific message flow              */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_TlmMessageFlow_t *MsgFlow)
+TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_ChannelData_t* channel, TO_TlmMessageFlow_t *MsgFlow)
 {
 	uint32 i = 0;
 	uint32 idx = 0;
@@ -210,7 +210,7 @@ TO_TlmPriorityQueue_t* TO_MessageFlow_GetPQueue(TO_TlmMessageFlow_t *MsgFlow)
 		goto end_of_function;
 	}
 
-	outPQueue = &TO_AppData.Config.PriorityQueue[idx];
+	outPQueue = &channel->ConfigTblPtr->PriorityQueue[idx];
 
 end_of_function:
     return outPQueue;
@@ -223,14 +223,14 @@ end_of_function:
 /* Add a message flow                                              */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-boolean TO_MessageFlow_Add(CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueIdx)
+boolean TO_MessageFlow_Add(TO_ChannelData_t *channel, CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueIdx)
 {
 	uint32 i = 0;
 	TO_TlmMessageFlow_t *msgFlow = 0;
     boolean added = FALSE;
 
     /* First, see if there is a flow with this message ID and priority queue. */
-    msgFlow = TO_MessageFlow_GetObject(MsgID,  PQueueIdx);
+    msgFlow = TO_MessageFlow_GetObject(channel, MsgID,  PQueueIdx);
 
     if(msgFlow != 0)
     {
@@ -240,54 +240,54 @@ boolean TO_MessageFlow_Add(CFE_SB_MsgId_t MsgID, uint16 MsgLimit, uint16 PQueueI
 		goto end_of_function;
     }
 
-    /* Now that we know a message flow definition doesn't already exist, find
-     * an unused entry so we can add one.  Unused entries have the MsgID set
-     * to 0.
-     */
-	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	{
-		if(TO_AppData.Config.MessageFlow[i].MsgId == 0)
-		{
-			int32 iStatus = CFE_SUCCESS;
-
-			/* We found an unused entry.  Set the message flow definition
-			 * here.  First, make sure the requested priority queue is valid.
-			 */
-			if(TO_PriorityQueue_IsValid(PQueueIdx) == FALSE)
-			{
-				/* This is an invalid priority queue. */
-				(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
-						"Priority Queue Index %u is invalid.",
-						PQueueIdx);
-				goto end_of_function;
-			}
-
-			/* Now subscribe to the message to ensure the message ID is
-			 * valid.
-			 */
-			iStatus = CFE_SB_SubscribeEx(MsgID, TO_AppData.DataPipeId,
-										 CFE_SB_Default_Qos, MsgLimit);
-			if (iStatus != CFE_SUCCESS)
-			{
-				(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
-						"Message flow failed to subscribe to (0x%08X). (%i)",
-						MsgID,
-						(unsigned int)iStatus);
-				goto end_of_function;
-			}
-
-			/* Now that the message was successfully subscribed to, set the
-			 * message flow definition.
-			 */
-			TO_AppData.Config.MessageFlow[i].MsgId = MsgID,
-			TO_AppData.Config.MessageFlow[i].MsgLimit = MsgLimit,
-			TO_AppData.Config.MessageFlow[i].PQueueID = PQueueIdx,
-			TO_AppData.Config.MessageFlow[i].DroppedMsgCnt = 0;
-			TO_AppData.Config.MessageFlow[i].QueuedMsgCnt = 0;
-
-			added = TRUE;
-		}
-	}
+//    /* Now that we know a message flow definition doesn't already exist, find
+//     * an unused entry so we can add one.  Unused entries have the MsgID set
+//     * to 0.
+//     */
+//	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
+//	{
+//		if(TO_AppData.Config.MessageFlow[i].MsgId == 0)
+//		{
+//			int32 iStatus = CFE_SUCCESS;
+//
+//			/* We found an unused entry.  Set the message flow definition
+//			 * here.  First, make sure the requested priority queue is valid.
+//			 */
+//			if(TO_PriorityQueue_IsValid(PQueueIdx) == FALSE)
+//			{
+//				/* This is an invalid priority queue. */
+//				(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
+//						"Priority Queue Index %u is invalid.",
+//						PQueueIdx);
+//				goto end_of_function;
+//			}
+//
+//			/* Now subscribe to the message to ensure the message ID is
+//			 * valid.
+//			 */
+//			iStatus = CFE_SB_SubscribeEx(MsgID, TO_AppData.DataPipeId,
+//										 CFE_SB_Default_Qos, MsgLimit);
+//			if (iStatus != CFE_SUCCESS)
+//			{
+//				(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
+//						"Message flow failed to subscribe to (0x%08X). (%i)",
+//						MsgID,
+//						(unsigned int)iStatus);
+//				goto end_of_function;
+//			}
+//
+//			/* Now that the message was successfully subscribed to, set the
+//			 * message flow definition.
+//			 */
+//			TO_AppData.Config.MessageFlow[i].MsgId = MsgID,
+//			TO_AppData.Config.MessageFlow[i].MsgLimit = MsgLimit,
+//			TO_AppData.Config.MessageFlow[i].PQueueID = PQueueIdx,
+//			TO_AppData.Config.MessageFlow[i].DroppedMsgCnt = 0;
+//			TO_AppData.Config.MessageFlow[i].QueuedMsgCnt = 0;
+//
+//			added = TRUE;
+//		}
+//	}
 
 end_of_function:
 	return added;
@@ -300,7 +300,7 @@ end_of_function:
 /* Remove a message flow                                           */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-boolean TO_MessageFlow_Remove(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
+boolean TO_MessageFlow_Remove(TO_ChannelData_t *channel, CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
 {
 	uint32 i = 0;
 	TO_TlmMessageFlow_t *msgFlow = 0;
@@ -308,7 +308,7 @@ boolean TO_MessageFlow_Remove(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
     int32 iStatus = CFE_SUCCESS;
 
     /* First, see if there is a flow with this message ID and priority queue. */
-    msgFlow = TO_MessageFlow_GetObject(MsgID, PQueueIdx);
+    msgFlow = TO_MessageFlow_GetObject(channel, MsgID, PQueueIdx);
 
     if(msgFlow == 0)
     {
@@ -361,21 +361,21 @@ boolean TO_MessageFlow_Query(CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
 
 	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
 	{
-		if(TO_AppData.Config.MessageFlow[i].MsgId == MsgID)
-		{
-			if(TO_AppData.Config.MessageFlow[i].PQueueID == PQueueIdx)
-			{
-				(void) CFE_EVS_SendEvent(TO_MSG_FLOW_INFO_EID, CFE_EVS_INFORMATION,
-			                      "MID=0x%04x ML=%u MS=%u PQI=%u D=%u Q=%u",
-								  TO_AppData.Config.MessageFlow[i].MsgId,
-								  TO_AppData.Config.MessageFlow[i].MsgLimit,
-								  TO_AppData.Config.MessageFlow[i].MinSize,
-								  TO_AppData.Config.MessageFlow[i].PQueueID,
-								  TO_AppData.Config.MessageFlow[i].DroppedMsgCnt,
-								  TO_AppData.Config.MessageFlow[i].QueuedMsgCnt);
-				found = TRUE;
-			}
-		}
+//		if(TO_AppData.Config.MessageFlow[i].MsgId == MsgID)
+//		{
+//			if(TO_AppData.Config.MessageFlow[i].PQueueID == PQueueIdx)
+//			{
+//				(void) CFE_EVS_SendEvent(TO_MSG_FLOW_INFO_EID, CFE_EVS_INFORMATION,
+//			                      "MID=0x%04x ML=%u MS=%u PQI=%u D=%u Q=%u",
+//								  TO_AppData.Config.MessageFlow[i].MsgId,
+//								  TO_AppData.Config.MessageFlow[i].MsgLimit,
+//								  TO_AppData.Config.MessageFlow[i].MinSize,
+//								  TO_AppData.Config.MessageFlow[i].PQueueID,
+//								  TO_AppData.Config.MessageFlow[i].DroppedMsgCnt,
+//								  TO_AppData.Config.MessageFlow[i].QueuedMsgCnt);
+//				found = TRUE;
+//			}
+//		}
 	}
 
 	if(found != TRUE)

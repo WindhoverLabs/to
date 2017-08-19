@@ -27,6 +27,7 @@
 #include "to_scheduler.h"
 #include "to_output_queue.h"
 #include "to_custom.h"
+#include "to_channel.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,25 +67,6 @@ typedef struct
     /** \brief Task Run Status */
     uint32  uiRunStatus;
 
-    /* Config table-related */
-
-    /** \brief Config Table Handle */
-    CFE_TBL_Handle_t  ConfigTblHdl;
-
-    /** \brief Config Table Pointer */
-    TO_ConfigTbl_t*  ConfigTblPtr;
-
-    /** \brief Local copy of the config table */
-    TO_ConfigTbl_t  Config;
-
-    /* Critical Data Storage (CDS) table-related */
-
-    /** \brief CDS Table Handle */
-    CFE_ES_CDSHandle_t  CdsTblHdl;
-
-    /** \brief CDS Table data */
-    TO_CdsTbl_t  CdsTbl;
-
     /* Inputs/Outputs */
 
     /** \brief Input Data from I/O or other apps */
@@ -98,6 +80,8 @@ typedef struct
 
     /** \brief Memory pool buffer for queued messages. */
     uint8		MemPoolBuffer [TO_NUM_BYTES_IN_MEM_POOL];/**< \brief HK mempool buffer */
+
+    TO_ChannelData_t ChannelData[TO_MAX_CHANNELS];
 
     /* TODO:  Add declarations for additional private data here */
 } TO_AppData_t;

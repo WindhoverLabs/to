@@ -11,6 +11,7 @@
 *************************************************************************/
 #include "cfe.h"
 #include "to_app.h"
+#include "to_channel.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +58,7 @@ extern "C" {
 **  \endreturns
 **
 *************************************************************************/
-int32  TO_InitConfigTbl(void);
+int32  TO_InitConfigTbl();
 
 /************************************************************************/
 /** \brief Validate TO Config table
@@ -90,7 +91,7 @@ int32  TO_ValidateConfigTbl(void*);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_AcquireConfigPointers(void);
+int32 TO_AcquireConfigPointer(TO_ChannelData_t *channel);
 
 /************************************************************************/
 /** \brief Process new TO Config table
@@ -107,7 +108,10 @@ int32 TO_AcquireConfigPointers(void);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_ProcessNewConfigTbl(void);
+int32 TO_ProcessNewConfigTbl(TO_ChannelData_t* channel);
+
+void TO_ReleaseAllTables(void);
+void TO_AcquireAllTables(void);
 
 
 #ifdef __cplusplus

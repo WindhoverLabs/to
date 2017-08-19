@@ -1,5 +1,5 @@
-#ifndef TO_CLASSIFIER_H
-#define TO_CLASSIFIER_H
+#ifndef TO_CHANNEL_H
+#define TO_CHANNEL_H
 
 /************************************************************************
 ** Pragmas
@@ -10,8 +10,36 @@
 *************************************************************************/
 
 #include "cfe.h"
-#include "to_message_flow.h"
-#include "to_priority_queue.h"
+#include "to_tbldefs.h"
+
+typedef struct TO_ChannelData_t TO_ChannelData_t;
+
+typedef enum
+{
+	TO_CHANNEL_CLOSED = 0,
+	TO_CHANNEL_OPENED = 1,
+	TO_CHANNEL_RECONFIGURING = 2,
+} TO_ChannelState_t;
+
+struct TO_ChannelData_t
+{
+	TO_ChannelState_t State;
+
+    /* Config table-related */
+
+    /** \brief Config Table Name */
+    char TableName[CFE_TBL_MAX_NAME_LENGTH];
+
+    /** \brief Config Table File Name */
+    char TableFileName[OS_MAX_PATH_LEN];
+
+    /** \brief Config Table Handle */
+    CFE_TBL_Handle_t  ConfigTblHdl;
+
+    /** \brief Config Table Pointer */
+    TO_ChannelTbl_t*  ConfigTblPtr;
+};
+
 
 /************************************************************************
 ** Local Defines
@@ -35,9 +63,7 @@
 **       TODO
 **
 *************************************************************************/
-void TO_Channel_ProcessAll(void);
+int32 TO_Channel_OpenChannel(uint32 index, char *TableName, char *TableFileName);
 
-/* TODO:  Add Doxygen. */
-void TO_Channel_ProcessChannel(uint32 idx);
 
 #endif
