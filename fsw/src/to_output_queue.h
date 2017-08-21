@@ -24,12 +24,11 @@
 */
 typedef struct
 {
-	uint16					MsgLimit;
 	uint16					SentCount;
 	uint16					CurrentlyQueuedCnt;
     uint16					HighwaterMark;
     uint32					OSALQueueID;
-} TO_TlmOutputQueue_t;
+} TO_OutputQueue_t;
 
 /************************************************************************
 ** External Global Variables
@@ -52,7 +51,7 @@ typedef struct
 **  \param [in]   Size          Size of the message, in bytes, to push.
 **
 *************************************************************************/
-int32 TO_OutputQueue_Push(const char* Buffer, uint32 Size);
+int32 TO_OutputQueue_Push(TO_ChannelData_t* channel, const char* Buffer, uint32 Size);
 
 
 
@@ -64,7 +63,7 @@ int32 TO_OutputQueue_Push(const char* Buffer, uint32 Size);
 **       the queue, deallocating each message its popped off the queue.
 **
 *************************************************************************/
-void  TO_OutputQueue_CleanupAll(void);
+void  TO_OutputQueue_CleanupAll(TO_ChannelData_t* channel);
 
 
 
@@ -77,7 +76,7 @@ void  TO_OutputQueue_CleanupAll(void);
 **       Highwater Marks.
 **
 *************************************************************************/
-void  TO_OutputChannel_ResetCountsAll(void);
+void  TO_OutputQueue_ResetCounts(TO_ChannelData_t* channel);
 
 
 
@@ -90,7 +89,7 @@ void  TO_OutputChannel_ResetCountsAll(void);
 **       deallocate the messages contained in the queues.
 **
 *************************************************************************/
-int32 TO_OutputQueue_Teardown(uint32 idx);
+int32 TO_OutputQueue_Teardown(TO_ChannelData_t* channel);
 
 
 
@@ -107,7 +106,7 @@ int32 TO_OutputQueue_Teardown(uint32 idx);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_OutputChannel_BuildupAll(void);
+int32 TO_OutputQueue_Buildup(TO_ChannelData_t* channel);
 
 
 
@@ -130,7 +129,7 @@ int32 TO_OutputChannel_BuildupAll(void);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_OutputQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputQueue_t* OutChannel);
+int32 TO_OutputQueue_QueueMsg(TO_ChannelData_t* channel, CFE_SB_MsgPtr_t MsgPtr);
 
 
 
@@ -149,6 +148,6 @@ int32 TO_OutputQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmOutputQueue_t* OutCh
 **  \endreturns
 **
 *************************************************************************/
-boolean TO_OutputChannel_Query(uint16 OutputChannelIdx);
+boolean TO_OutputChannel_Query(uint16 ChannelIdx);
 
 #endif

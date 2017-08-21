@@ -8,6 +8,7 @@
 *************************************************************************/
 #include "to_config_utils.h"
 #include "to_channel.h"
+#include "to_output_queue.h"
 #include <string.h>
 
 /************************************************************************
@@ -52,7 +53,7 @@ int32 TO_InitConfigTbl(TO_ChannelData_t *channel)
 
     /* Register Config table */
     iStatus = CFE_TBL_Register(&channel->ConfigTblHdl,
-    						   channel->TableName,
+    						   channel->ConfigTableName,
                                sizeof(TO_ChannelTbl_t),
                                CFE_TBL_OPT_DEFAULT,
                                TO_ValidateConfigTbl);
@@ -66,16 +67,46 @@ int32 TO_InitConfigTbl(TO_ChannelData_t *channel)
         goto TO_InitConfigTbl_Exit_Tag;
     }
 
+    /* Register Dump table */
+    iStatus = CFE_TBL_Register(&channel->DumpTblHdl,
+    						   channel->DumpTableName,
+                               sizeof(TO_ChannelDumpTbl_t),
+							   CFE_TBL_OPT_USR_DEF_ADDR,
+                               0);
+    if (iStatus != CFE_SUCCESS)
+    {
+        /* Note, a critical table could return another nominal code.  If this table is
+         * made critical this logic would have to change. */
+        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+                                 "Failed to register Config table (0x%08X)",
+                                 (unsigned int)iStatus);
+        goto TO_InitConfigTbl_Exit_Tag;
+    }
+
     /* Load Config table file */
     iStatus = CFE_TBL_Load(channel->ConfigTblHdl,
                            CFE_TBL_SRC_FILE,
-						   channel->TableFileName);
+						   channel->ConfigTableFileName);
     if (iStatus != CFE_SUCCESS)
     {
         /* Note, CFE_SUCCESS is for a successful full table load.  If a partial table
            load is desired then this logic would have to change. */
         (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
                                  "Failed to load Config Table (0x%08X)",
+                                 (unsigned int)iStatus);
+        goto TO_InitConfigTbl_Exit_Tag;
+    }
+
+    /* Load Dump table */
+    iStatus = CFE_TBL_Load(channel->DumpTblHdl,
+    		               CFE_TBL_SRC_ADDRESS,
+						   &channel->DumpTbl);
+    if (iStatus != CFE_SUCCESS)
+    {
+        /* Note, CFE_SUCCESS is for a successful full table load.  If a partial table
+           load is desired then this logic would have to change. */
+        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+                                 "Failed to load Dump Table (0x%08X)",
                                  (unsigned int)iStatus);
         goto TO_InitConfigTbl_Exit_Tag;
     }
@@ -130,16 +161,17 @@ int32 TO_ProcessNewConfigTbl(TO_ChannelData_t* channel)
 	uint32 i = 0;
 	int32 iStatus = 0;
 
-	/* First, tear down the current configuration. */
-    TO_MessageFlow_TeardownAll();
-    TO_PriorityQueue_TeardownAll();
-    //TO_OutputChannel_TeardownAll();
-
-
-	/* Now, build up the new configuration. */
-	TO_MessageFlow_Buildup(channel);
-	//TO_PriorityQueue_BuildupAll();
-	//TO_OutputChannel_BuildupAll();
+	/* Build up the new configuration. */
+	iStatus = TO_MessageFlow_Buildup(channel);
+	if(iStatus != 0)
+	{
+		goto end_of_function;
+	}
+	iStatus = TO_PriorityQueue_BuildupAll(channel);
+	if(iStatus != 0)
+	{
+		goto end_of_function;
+	}
 
 end_of_function:
     return iStatus;
@@ -161,20 +193,6 @@ void TO_ReleaseAllTables()
     {
     	if(TO_AppData.ChannelData[i].State == TO_CHANNEL_OPENED)
     	{
-
-    	    iStatus = CFE_TBL_GetStatus(TO_AppData.ChannelData[i].ConfigTblHdl);
-    		if ((iStatus & CFE_SEVERITY_BITMASK) == CFE_SEVERITY_ERROR)
-    		{
-    			(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-    									 "Failed to get config table status (0x%08X)",
-    									 (unsigned int)iStatus);
-    		}
-    		else if(iStatus == CFE_TBL_INFO_UPDATE_PENDING)
-    		{
-    			/* Tear stuff down. */
-    			OS_printf("TEAR DOWN\n");
-    		}
-
 			CFE_TBL_ReleaseAddress(TO_AppData.ChannelData[i].ConfigTblHdl);
     	}
     }
@@ -196,9 +214,23 @@ void TO_AcquireAllTables()
     {
     	if(TO_AppData.ChannelData[i].State == TO_CHANNEL_OPENED)
     	{
+    		iStatus = CFE_TBL_GetStatus(TO_AppData.ChannelData[i].ConfigTblHdl);
+			if ((iStatus & CFE_SEVERITY_BITMASK) == CFE_SEVERITY_ERROR)
+			{
+				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+										 "Failed to get config table status (0x%08X)",
+										 (unsigned int)iStatus);
+			}
+			else if(iStatus == CFE_TBL_INFO_UPDATE_PENDING)
+			{
+				TO_MessageFlow_TeardownAll(&TO_AppData.ChannelData[i]);
+				TO_PriorityQueue_TeardownAll(&TO_AppData.ChannelData[i]);
+			}
+
 			/*
-			** Manage the table
+			** Manage the tables
 			*/
+			CFE_TBL_Manage(TO_AppData.ChannelData[i].DumpTblHdl);
 			iStatus = CFE_TBL_Manage(TO_AppData.ChannelData[i].ConfigTblHdl);
 			if ((iStatus != CFE_SUCCESS) && (iStatus != CFE_TBL_INFO_UPDATED))
 			{
@@ -217,7 +249,6 @@ void TO_AcquireAllTables()
 				if (iStatus == CFE_TBL_INFO_UPDATED)
 				{
 					TO_ProcessNewConfigTbl(&TO_AppData.ChannelData[i]);
-					//TO_ProcessNewConfigTbl();
 					iStatus = CFE_SUCCESS;
 				}
 				else if(iStatus != CFE_SUCCESS)

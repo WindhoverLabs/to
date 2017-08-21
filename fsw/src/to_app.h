@@ -59,9 +59,6 @@ typedef struct
     /** \brief Command Pipe ID */
     CFE_SB_PipeId_t  CmdPipeId;
 
-    /** \brief Data Pipe ID */
-    CFE_SB_PipeId_t  DataPipeId;
-
     /* Task-related */
 
     /** \brief Task Run Status */
@@ -323,17 +320,6 @@ void  TO_SendOutData(void);
 **
 *************************************************************************/
 boolean  TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr, uint16 usExpectedLen);
-
-/************************************************************************/
-/** \brief Process telemetry for downlink.
-**
-**  \par Description
-**       This function will call the Classifier and Scheduler functions
-**       to prepare messages for downlink by the output channel handler
-**       in the custom layer.
-**
-*************************************************************************/
-void TO_ProcessTelemetry(void);
 
 #ifdef __cplusplus
 }

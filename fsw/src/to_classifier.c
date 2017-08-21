@@ -20,12 +20,13 @@ void TO_Classifier_Run(TO_ChannelData_t* channel)
      * maximum number of messages we want to process in this frame. */
     for(i = 0; i < TO_MAX_MSGS_OUT_PER_FRAME; ++i)
     {
-        iStatus = CFE_SB_RcvMsg(&DataMsgPtr, TO_AppData.DataPipeId, CFE_SB_POLL);
+        iStatus = CFE_SB_RcvMsg(&DataMsgPtr, channel->DataPipeId, CFE_SB_POLL);
         if (iStatus == CFE_SUCCESS)
         {
-        	TO_TlmPriorityQueue_t *pqueue = 0;
-        	TO_TlmMessageFlow_t *msgFlow = 0;
-        	int32 Cursor = 0;
+        	TO_PriorityQueue_t *pqueue = 0;
+        	TO_MessageFlow_t *msgFlow = 0;
+        	int32 msgFlowIndex = 0;
+        	int32 pQueueIndex = 0;
 
         	CFE_SB_MsgId_t DataMsgID = CFE_SB_GetMsgId(DataMsgPtr);
 
@@ -33,54 +34,40 @@ void TO_Classifier_Run(TO_ChannelData_t* channel)
         	 * Message ID is not in the table at all so we shouldn't have
         	 * received this message.  Raise an event.
         	 */
-    		msgFlow = TO_MessageFlow_GetNextObject(channel, DataMsgID, &Cursor);
+    		msgFlow = TO_MessageFlow_GetObject(channel, DataMsgID, &msgFlowIndex);
 			if(msgFlow == 0)
 			{
-				Cursor = -1;
 				(void) CFE_EVS_SendEvent(TO_MSGID_ERR_EID, CFE_EVS_ERROR,
 								  "Recvd invalid SCH msgId (0x%04X)", (unsigned short)DataMsgID);
 			}
 
-			/* Process this Priority Queue and keep retrieving Message Flow
-			 * objects until no more objects are found.
-			 */
-        	while(Cursor > 0)
-        	{
-        		/* Get the Priority Queue assigned to this Message Flow. */
-				pqueue = TO_MessageFlow_GetPQueue(channel, msgFlow);
-				if(pqueue != 0)
+			/* Get the Priority Queue assigned to this Message Flow. */
+			pqueue = TO_MessageFlow_GetPQueue(channel, msgFlow, &pQueueIndex);
+			if(pqueue != 0)
+			{
+				/* Queue the message. */
+				iStatus = TO_PriorityQueue_QueueMsg(channel, DataMsgPtr, pQueueIndex);
+				if(iStatus == CFE_SUCCESS)
 				{
-					/* Queue the message. */
-					iStatus = TO_PriorityQueue_QueueMsg(DataMsgPtr, pqueue);
-					if(iStatus == CFE_SUCCESS)
+					/* The message was queued.  Increment counters. */
+					channel->DumpTbl.MessageFlow[msgFlowIndex].QueuedMsgCnt++;
+					channel->DumpTbl.PriorityQueue[pQueueIndex].QueuedMsgCnt++;
+					channel->DumpTbl.PriorityQueue[pQueueIndex].CurrentlyQueuedCnt++;
+					if(channel->DumpTbl.PriorityQueue[pQueueIndex].HighwaterMark <
+							channel->DumpTbl.PriorityQueue[pQueueIndex].CurrentlyQueuedCnt)
 					{
-						/* The message was queued.  Increment counters. */
-						msgFlow->QueuedMsgCnt++;
-						pqueue->QueuedMsgCnt++;
-						pqueue->CurrentlyQueuedCnt++;
-						if(pqueue->HighwaterMark < pqueue->CurrentlyQueuedCnt)
-						{
-							pqueue->HighwaterMark++;
-						}
-					}
-					else
-					{
-						/* Queue is full.  Increment counters and drop the message. */
-						msgFlow->DroppedMsgCnt++;
-						pqueue->DroppedMsgCnt++;
-						Cursor = -1;
-						CFE_EVS_SendEvent(TO_MSG_DROP_FROM_FLOW_DBG_EID, CFE_EVS_DEBUG,
-									  "PQ full.  Dropped message 0x%04x", (unsigned int)DataMsgID);
+						channel->DumpTbl.PriorityQueue[pQueueIndex].HighwaterMark++;
 					}
 				}
 				else
 				{
-					/* This shouldn't happen.  But raise an event if it does. */
-					CFE_EVS_SendEvent(TO_MSG_DROP_FROM_FLOW_DBG_EID, CFE_EVS_ERROR,
-								  "PQ not found.  Dropped message 0x%04x", (unsigned int)DataMsgID);
+					/* Queue is full.  Increment counters and drop the message. */
+					channel->DumpTbl.MessageFlow[msgFlowIndex].DroppedMsgCnt++;
+					channel->DumpTbl.PriorityQueue[pQueueIndex].DroppedMsgCnt++;
+					CFE_EVS_SendEvent(TO_MSG_DROP_FROM_FLOW_DBG_EID, CFE_EVS_DEBUG,
+								  "PQ full.  Dropped message 0x%04x", (unsigned int)DataMsgID);
 				}
-	    		msgFlow = TO_MessageFlow_GetNextObject(channel, DataMsgID, &Cursor);
-        	}
+			}
         }
         else if (iStatus == CFE_SB_NO_MESSAGE)
         {

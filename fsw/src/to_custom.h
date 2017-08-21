@@ -54,7 +54,7 @@ int32 TO_Custom_Init(void);
 **       layers will do anything in this function.
 **
 *************************************************************************/
-int32 TO_OutputChannel_CustomBuildupAll(void);
+int32 TO_OutputChannel_CustomBuildup(uint32 index);
 
 
 
@@ -72,7 +72,7 @@ int32 TO_OutputChannel_CustomBuildupAll(void);
 **       layers will do anything in this function.
 **
 *************************************************************************/
-int32 TO_OutputChannel_CustomTeardownAll(void);
+int32 TO_OutputChannel_CustomTeardown(uint32 index);
 
 
 

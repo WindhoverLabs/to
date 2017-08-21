@@ -40,10 +40,18 @@ typedef struct
 {
 	uint8	TableID;
 
-	TO_TlmMessageFlow_t	       MessageFlow[TO_MAX_MESSAGE_FLOWS];
-	TO_TlmPriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
-	TO_TlmOutputQueue_t        OutputQueue;
+	TO_MessageFlow_t	    MessageFlow[TO_MAX_MESSAGE_FLOWS];
+	TO_PriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
 } TO_ChannelTbl_t;
+
+typedef struct
+{
+	uint8	TableID;
+
+	TO_MessageFlowMetrics_t	  MessageFlow[TO_MAX_MESSAGE_FLOWS];
+	TO_PriorityQueueMetrics_t PriorityQueue[TO_MAX_PRIORITY_QUEUES];
+	TO_OutputQueue_t    	  OutputQueue;
+} TO_ChannelDumpTbl_t;
 
 /************************************************************************
 ** External Global Variables

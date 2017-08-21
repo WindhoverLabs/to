@@ -17,23 +17,23 @@ void TO_Scheduler_Run(TO_ChannelData_t *channel)
 	for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
 	{
 		int32 iStatus = 0;
-		TO_TlmPriorityQueue_t *pqueue = &channel->ConfigTblPtr->PriorityQueue[i];
+		TO_PriorityQueue_t *pqueue = &channel->ConfigTblPtr->PriorityQueue[i];
 		if(pqueue->State != TO_PQUEUE_UNUSED)
 		{
-			if(pqueue->OSALQueueID !=0)
+			if(channel->DumpTbl.PriorityQueue[i].OSALQueueID !=0)
 			{
-				TO_TlmOutputQueue_t *oqueue = &channel->ConfigTblPtr->OutputQueue;
+				TO_OutputQueue_t *oqueue = &channel->OutputQueue;
 				void *buffer;
 				uint32 bufferSize = 0;
-				while((iStatus == OS_SUCCESS) && (oqueue->CurrentlyQueuedCnt < oqueue->MsgLimit))
+				while((iStatus == OS_SUCCESS) && (oqueue->CurrentlyQueuedCnt < TO_OUTPUT_QUEUE_DEPTH))
 				{
 					iStatus =  OS_QueueGet(
-							channel->ConfigTblPtr->PriorityQueue[i].OSALQueueID,
+							channel->DumpTbl.PriorityQueue[i].OSALQueueID,
 							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
 					if(iStatus == OS_SUCCESS)
 					{
-						channel->ConfigTblPtr->PriorityQueue[i].CurrentlyQueuedCnt--;
-						iStatus == TO_OutputQueue_QueueMsg(buffer, oqueue);
+						channel->DumpTbl.PriorityQueue[i].CurrentlyQueuedCnt--;
+						iStatus == TO_OutputQueue_QueueMsg(channel, buffer);
 		            	if(iStatus == CFE_SUCCESS)
 		            	{
 		            		oqueue->CurrentlyQueuedCnt++;

@@ -28,16 +28,34 @@ struct TO_ChannelData_t
     /* Config table-related */
 
     /** \brief Config Table Name */
-    char TableName[CFE_TBL_MAX_NAME_LENGTH];
+    char ConfigTableName[CFE_TBL_MAX_NAME_LENGTH];
 
     /** \brief Config Table File Name */
-    char TableFileName[OS_MAX_PATH_LEN];
+    char ConfigTableFileName[OS_MAX_PATH_LEN];
+
+    /** \brief Dump Table Name */
+    char DumpTableName[OS_MAX_PATH_LEN];
+
+    char ChannelName[OS_MAX_PATH_LEN];
 
     /** \brief Config Table Handle */
     CFE_TBL_Handle_t  ConfigTblHdl;
 
     /** \brief Config Table Pointer */
     TO_ChannelTbl_t*  ConfigTblPtr;
+
+    /** \brief Dump Table Handle */
+    CFE_TBL_Handle_t  DumpTblHdl;
+
+    /** \brief Dump Table Pointer */
+    TO_ChannelDumpTbl_t  DumpTbl;
+
+    /** \brief Data Pipe ID */
+    CFE_SB_PipeId_t  DataPipeId;
+
+
+
+	TO_OutputQueue_t OutputQueue;
 };
 
 
@@ -63,7 +81,15 @@ struct TO_ChannelData_t
 **       TODO
 **
 *************************************************************************/
-int32 TO_Channel_OpenChannel(uint32 index, char *TableName, char *TableFileName);
+int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
+		char *ConfigTableName, char *ConfigTableFileName,
+		char *DumpTableName);
+
+int32 TO_Channel_ProcessTelemetryAll(void);
+int32 TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel);
+
+int32 TO_Channel_ResetCountsAll(void);
+int32 TO_Channel_ResetCounts(TO_ChannelData_t *channel);
 
 
 #endif

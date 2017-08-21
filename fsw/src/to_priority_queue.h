@@ -15,6 +15,8 @@
 ** Local Defines
 *************************************************************************/
 
+typedef struct TO_ChannelData_t TO_ChannelData_t;
+
 /************************************************************************
 ** Local Structure Definitions
 *************************************************************************/
@@ -42,15 +44,20 @@ typedef enum
 typedef struct
 {
 	TO_PriorityQueueState_t State;
-	uint16					ChannelID;
 	uint16					MsgLimit;
 	TO_PriorityQueueType_t  QType;
+} TO_PriorityQueue_t;
+
+typedef struct
+{
 	uint16					DroppedMsgCnt;
     uint16					QueuedMsgCnt;
     uint16					CurrentlyQueuedCnt;
     uint16					HighwaterMark;
     uint32					OSALQueueID;
-} TO_TlmPriorityQueue_t;
+} TO_PriorityQueueMetrics_t;
+
+
 
 /************************************************************************
 ** External Global Variables
@@ -67,7 +74,7 @@ typedef struct
 **       and Queued Message Counts.
 **
 *************************************************************************/
-void TO_PriorityQueue_ResetCountsAll(void);
+void TO_PriorityQueue_ResetCountsAll(TO_ChannelData_t* channel);
 
 
 
@@ -79,7 +86,7 @@ void TO_PriorityQueue_ResetCountsAll(void);
 **       the queue, deallocating each message its popped off the queue.
 **
 *************************************************************************/
-void TO_PriorityQueue_CleanupAll(void );
+void TO_PriorityQueue_CleanupAll(TO_ChannelData_t* channel);
 
 
 
@@ -96,7 +103,7 @@ void TO_PriorityQueue_CleanupAll(void );
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_PriorityQueue_BuildupAll(void);
+int32 TO_PriorityQueue_BuildupAll(TO_ChannelData_t* channel);
 
 
 
@@ -111,7 +118,7 @@ int32 TO_PriorityQueue_BuildupAll(void);
 **                              references the software bus message
 
 **
-**  \param [in]   PQueue        A #TO_TlmPriorityQueue_t pointer to
+**  \param [in]   PQueue        A #TO_PriorityQueue_t pointer to
 **                              the priority queue object.
 **
 **  \returns
@@ -119,7 +126,7 @@ int32 TO_PriorityQueue_BuildupAll(void);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* PQueue);
+int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPtr, uint32 PQueueIndex);
 
 
 
@@ -136,7 +143,7 @@ int32 TO_PriorityQueue_QueueMsg(CFE_SB_MsgPtr_t MsgPtr, TO_TlmPriorityQueue_t* P
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_PriorityQueue_TeardownAll(void);
+int32 TO_PriorityQueue_TeardownAll(TO_ChannelData_t* channel);
 
 
 
@@ -156,7 +163,7 @@ int32 TO_PriorityQueue_TeardownAll(void);
 **  \endreturns
 **
 *************************************************************************/
-boolean TO_PriorityQueue_Query(uint16 PQueueIdx);
+boolean TO_PriorityQueue_Query(uint16 ChannelIdx, uint16 PQueueIdx);
 
 
 
@@ -174,7 +181,7 @@ boolean TO_PriorityQueue_Query(uint16 PQueueIdx);
 **  \endreturns
 **
 *************************************************************************/
-boolean TO_PriorityQueue_IsValid(uint32 PQueueIdx);
+boolean TO_PriorityQueue_IsValid(TO_ChannelData_t* channel, uint32 PQueueIdx);
 
 
 #endif
