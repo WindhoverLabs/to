@@ -67,6 +67,8 @@ void TO_Classifier_Run(TO_ChannelData_t* channel)
 					CFE_EVS_SendEvent(TO_MSG_DROP_FROM_FLOW_DBG_EID, CFE_EVS_DEBUG,
 								  "PQ full.  Dropped message 0x%04x", (unsigned int)DataMsgID);
 				}
+
+    			CFE_TBL_Modified(channel->DumpTblHdl);
 			}
         }
         else if (iStatus == CFE_SB_NO_MESSAGE)

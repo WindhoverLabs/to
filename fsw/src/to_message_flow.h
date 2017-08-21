@@ -125,29 +125,7 @@ void TO_MessageFlow_CleanupAll(TO_ChannelData_t* channel);
 **  \endreturns
 **
 *************************************************************************/
-TO_MessageFlow_t* TO_MessageFlow_GetNextObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *Cursor);
-
-
-
-/************************************************************************/
-/** \brief Get the specified message flow object.
-**
-**  \par Description
-**       This function is used by the classifier to get a specific
-**       message flow object with the specified message ID.
-**
-**  \param [in]   MsgPtr        A #CFE_SB_MsgId_t that references the
-**                              software bus message.
-**
-**  \param [in]   PQueueIdx     The index of the priority queue.
-**
-**  \returns
-**  Pointer to the #TO_MessageFlow_t object when successful.  NULL
-**  pointer when unsuccessful.
-**  \endreturns
-**
-*************************************************************************/
-TO_MessageFlow_t* TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *PQueueIdx);
+TO_MessageFlow_t* TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *Index);
 
 
 

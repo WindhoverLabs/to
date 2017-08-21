@@ -42,6 +42,8 @@ void TO_Scheduler_Run(TO_ChannelData_t *channel)
 		                		oqueue->HighwaterMark++;
 		                	}
 		            	}
+
+		    			CFE_TBL_Modified(channel->DumpTblHdl);
 					}
 				}
 			}

@@ -140,40 +140,6 @@ TO_MessageFlow_t* TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_Msg
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
-/* Get a specific message flow object                              */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-TO_MessageFlow_t* TO_MessageFlow_GetObjectAAA(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint16 PQueueIdx)
-{
-	TO_MessageFlow_t *outMsgFlow = 0;
-	uint32 i = 0;
-
-	if(MsgID == 0)
-	{
-		outMsgFlow = 0;
-	}
-	else
-	{
-		for(i; i < TO_MAX_MESSAGE_FLOWS; ++i)
-		{
-			if(channel->ConfigTblPtr->MessageFlow[i].MsgId == MsgID)
-			{
-				if(channel->ConfigTblPtr->MessageFlow[i].PQueueID == PQueueIdx)
-				{
-					outMsgFlow = &channel->ConfigTblPtr->MessageFlow[i];
-					break;
-				}
-			}
-		}
-	}
-
-	return outMsgFlow;
-}
-
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
 /* Get the priority queue for a specific message flow              */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -291,6 +257,8 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
 			channel->DumpTbl.MessageFlow[i].DroppedMsgCnt = 0;
 			channel->DumpTbl.MessageFlow[i].QueuedMsgCnt = 0;
 
+			CFE_TBL_Modified(channel->ConfigTblHdl);
+
 			added = TRUE;
 		}
 	}
@@ -362,6 +330,8 @@ boolean TO_MessageFlow_Remove(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
 	channel->ConfigTblPtr->MessageFlow[msgFlowIndex].PQueueID = 0;
 	channel->DumpTbl.MessageFlow[msgFlowIndex].DroppedMsgCnt = 0;
 	channel->DumpTbl.MessageFlow[msgFlowIndex].QueuedMsgCnt = 0;
+
+	CFE_TBL_Modified(channel->ConfigTblHdl);
 
     removed = TRUE;
 
