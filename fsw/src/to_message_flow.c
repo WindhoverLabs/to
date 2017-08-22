@@ -258,6 +258,7 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
 			channel->DumpTbl.MessageFlow[i].QueuedMsgCnt = 0;
 
 			CFE_TBL_Modified(channel->ConfigTblHdl);
+			CFE_TBL_Modified(channel->DumpTblHdl);
 
 			added = TRUE;
 		}
@@ -332,6 +333,7 @@ boolean TO_MessageFlow_Remove(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
 	channel->DumpTbl.MessageFlow[msgFlowIndex].QueuedMsgCnt = 0;
 
 	CFE_TBL_Modified(channel->ConfigTblHdl);
+	CFE_TBL_Modified(channel->DumpTblHdl);
 
     removed = TRUE;
 

@@ -42,6 +42,17 @@ TO_AppData_t  TO_AppData;
 /************************************************************************
 ** Local Variables
 *************************************************************************/
+uint32  TO_MemPoolDefSize[TO_MAX_MEMPOOL_BLK_SIZES] =
+{
+    TO_MAX_BLOCK_SIZE,
+	TO_MEM_BLOCK_SIZE_07,
+    TO_MEM_BLOCK_SIZE_06,
+	TO_MEM_BLOCK_SIZE_05,
+	TO_MEM_BLOCK_SIZE_04,
+	TO_MEM_BLOCK_SIZE_03,
+	TO_MEM_BLOCK_SIZE_02,
+	TO_MEM_BLOCK_SIZE_01
+};
 
 /************************************************************************
 ** Local Function Definitions
@@ -65,8 +76,8 @@ int32 TO_InitEvent()
     /* TODO: Choose the events you want to filter.  CFE_EVS_MAX_EVENT_FILTERS
      * limits the number of filters per app.  An explicit CFE_EVS_NO_FILTER 
      * (the default) has been provided as an example. */
-    TO_AppData.EventTbl[  ind].EventID = TO_RESERVED_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
+    TO_AppData.EventTbl[  ind].EventID = TO_GET_POOL_ERR_EID;
+    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
 
     TO_AppData.EventTbl[  ind].EventID = TO_INF_EID;
     TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
@@ -191,6 +202,8 @@ void TO_InitData()
     /* Init housekeeping packet */
     CFE_SB_InitMsg(&TO_AppData.HkTlm,
                    TO_HK_TLM_MID, sizeof(TO_AppData.HkTlm), TRUE);
+
+    TO_AppData.HkTlm.MaxMem = TO_NUM_BYTES_IN_MEM_POOL;
 }
 
 
@@ -230,13 +243,24 @@ int32 TO_InitApp()
     /* Initialize the memory pool for the priority queues and output channel
      * queues.
      */
-    iStatus = CFE_ES_PoolCreate (&TO_AppData.HkTlm.MemPoolHandle,
-                                  TO_AppData.MemPoolBuffer,
-                                  sizeof (TO_AppData.MemPoolBuffer) );
+    iStatus = CFE_ES_PoolCreateEx(&TO_AppData.HkTlm.MemPoolHandle,
+    		      TO_AppData.MemPoolBuffer,
+				  TO_NUM_BYTES_IN_MEM_POOL,
+				  TO_MAX_MEMPOOL_BLK_SIZES,
+                  &TO_MemPoolDefSize[0],
+                  CFE_ES_USE_MUTEX);
     if (iStatus != CFE_SUCCESS)
     {
     	(void) CFE_EVS_SendEvent(TO_CR_POOL_ERR_EID, CFE_EVS_ERROR,
         		"Error creating memory pool (0x%08X)",(unsigned int)iStatus);
+        goto TO_InitApp_Exit_Tag;
+    }
+
+    iStatus = TO_Channel_InitAll();
+    if (iStatus != CFE_SUCCESS)
+    {
+    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+        		"Error initializing channels (0x%08X)",(unsigned int)iStatus);
         goto TO_InitApp_Exit_Tag;
     }
 
@@ -293,6 +317,7 @@ TO_InitApp_Exit_Tag:
 
 void TO_CleanupCallback()
 {
+	TO_Channel_CleanupAll();
 //	TO_MessageFlow_TeardownAll();
 //	TO_PriorityQueue_TeardownAll();
 //	TO_OutputChannel_TeardownAll();
@@ -467,7 +492,8 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
 					TO_AppData.HkTlm.usCmdCnt = 0;
 					TO_AppData.HkTlm.usCmdErrCnt = 0;
 					TO_AppData.HkTlm.usTotalMsgDropped = 0;
-					TO_AppData.HkTlm.usNoSerFuncCnt = 0;
+					TO_AppData.HkTlm.PeakMemInUse = 0;
+
 					TO_Channel_ResetCountsAll();
 
 					(void) CFE_EVS_SendEvent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION,

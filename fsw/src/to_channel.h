@@ -53,7 +53,7 @@ struct TO_ChannelData_t
     /** \brief Data Pipe ID */
     CFE_SB_PipeId_t  DataPipeId;
 
-
+    uint32 MutexID;
 
 	TO_OutputQueue_t OutputQueue;
 };
@@ -90,6 +90,16 @@ int32 TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel);
 
 int32 TO_Channel_ResetCountsAll(void);
 int32 TO_Channel_ResetCounts(TO_ChannelData_t *channel);
+
+void  TO_Channel_LockByIndex(uint32 index);
+void  TO_Channel_UnlockByIndex(uint32 index);
+void  TO_Channel_LockByRef(TO_ChannelData_t *channel);
+void  TO_Channel_UnlockByRef(TO_ChannelData_t *channel);
+
+int32 TO_Channel_InitAll(void);
+int32 TO_Channel_Init(uint32 index);
+void TO_Channel_CleanupAll(void);
+void TO_Channel_Cleanup(uint32 index);
 
 
 #endif

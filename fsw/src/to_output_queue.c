@@ -98,6 +98,7 @@ int32 TO_OutputQueue_Teardown(TO_ChannelData_t* channel)
 							(unsigned int)iStatus);
 					goto end_of_function;
 				}
+			    TO_AppData.HkTlm.MemInUse -= iStatus;
 			}
 		}
 		if(iStatus != OS_QUEUE_EMPTY)
@@ -168,6 +169,7 @@ int32 TO_OutputQueue_QueueMsg(TO_ChannelData_t* channel, CFE_SB_MsgPtr_t MsgPtr)
                              (int)iStatus);
         	goto end_of_function;
     	}
+	    TO_AppData.HkTlm.MemInUse -= iStatus;
     }
     else if(iStatus != CFE_SUCCESS)
     {

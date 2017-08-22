@@ -193,13 +193,13 @@ typedef struct
         \brief Count of all messages dropped */
     uint8              usTotalMsgDropped;
 
-    /** \totlmmnemonic \TO_NOSERFUNCCNT
-        \brief Count of messages with no serialize functions. */
-    uint8              usNoSerFuncCnt;
-
     /** \totlmmnemonic \TO_MEMPOOLHNDL
         \brief Memory pool handle for queued messages. */
     uint32             MemPoolHandle;
+
+    uint32 			   MemInUse;
+    uint32 			   PeakMemInUse;
+    uint32             MaxMem;
   
     /* TODO:  Add declarations for additional housekeeping data here */
 

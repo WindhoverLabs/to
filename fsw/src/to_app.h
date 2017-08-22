@@ -37,6 +37,28 @@ extern "C" {
 ** Local Defines
 *************************************************************************/
 
+#define TO_MAX_MEMPOOL_BLK_SIZES 8
+
+/**
+**  \cfeescfg Define TO Memory Pool Block Sizes
+**
+**  \par Description:
+**       TO Memory Pool Block Sizes
+**
+**  \par Limits
+**       These sizes MUST be increasing and MUST be an integral multiple of 4.
+**       The number of block sizes defined cannot exceed
+**       #CFE_ES_MAX_MEMPOOL_BLOCK_SIZES
+*/
+#define TO_MEM_BLOCK_SIZE_01              8
+#define TO_MEM_BLOCK_SIZE_02             16
+#define TO_MEM_BLOCK_SIZE_03             32
+#define TO_MEM_BLOCK_SIZE_04             64
+#define TO_MEM_BLOCK_SIZE_05            184
+#define TO_MEM_BLOCK_SIZE_06            256
+#define TO_MEM_BLOCK_SIZE_07            512
+#define TO_MAX_BLOCK_SIZE       (TO_MEM_BLOCK_SIZE_07 + TO_MEM_BLOCK_SIZE_07)
+
 /************************************************************************
 ** Local Structure Definitions
 *************************************************************************/

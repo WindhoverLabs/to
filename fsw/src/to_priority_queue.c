@@ -99,6 +99,7 @@ int32 TO_PriorityQueue_TeardownAll(TO_ChannelData_t *channel)
 									(unsigned int)iStatus);
 							goto end_of_function;
 						}
+					    TO_AppData.HkTlm.MemInUse -= iStatus;
 					}
 				}
 				if(iStatus != OS_QUEUE_EMPTY)
@@ -172,12 +173,21 @@ int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPt
 	 */
     iStatus = CFE_ES_GetPoolBuf ((uint32 **) &TO_CopyBuffer,
     		TO_AppData.HkTlm.MemPoolHandle, bufferSize);
-    if(iStatus < bufferSize)
+    if((iStatus < 0) || (TO_CopyBuffer == 0))
     {
         (void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
-                          "GetPoolBuf failed: size=%lu error=%i",
-						  bufferSize, (int)iStatus);
+                          "GetPoolBuf failed: size=%lu error=0x%08xi. MIU=%u PMIU=%u",
+						  bufferSize, (int)iStatus,
+						  (unsigned int)TO_AppData.HkTlm.MemInUse,
+						  (unsigned int)TO_AppData.HkTlm.PeakMemInUse);
+        iStatus = -1;
         goto end_of_function;
+    }
+
+    TO_AppData.HkTlm.MemInUse += iStatus;
+    if(TO_AppData.HkTlm.MemInUse > TO_AppData.HkTlm.PeakMemInUse)
+    {
+    	TO_AppData.HkTlm.PeakMemInUse = TO_AppData.HkTlm.MemInUse;
     }
 
     /* Copy the message into the newly allocated memory. */
@@ -199,6 +209,7 @@ int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPt
                              (int)iStatus);
         	goto end_of_function;
     	}
+	    TO_AppData.HkTlm.MemInUse -= iStatus;
 	    iStatus = -1;
     }
     else if(iStatus != CFE_SUCCESS)

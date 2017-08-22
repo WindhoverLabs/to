@@ -121,3 +121,105 @@ int32 TO_Channel_ResetCounts(TO_ChannelData_t *channel)
 }
 
 
+
+void  TO_Channel_LockByIndex(uint32 index)
+{
+	if(index < TO_MAX_CHANNELS)
+	{
+		TO_ChannelData_t *channel = &TO_AppData.ChannelData[index];
+		TO_Channel_LockByRef(channel);
+	}
+}
+
+
+
+void  TO_Channel_UnlockByIndex(uint32 index)
+{
+	if(index < TO_MAX_CHANNELS)
+	{
+		TO_ChannelData_t *channel = &TO_AppData.ChannelData[index];
+		TO_Channel_UnlockByRef(channel);
+	}
+}
+
+
+
+void  TO_Channel_LockByRef(TO_ChannelData_t *channel)
+{
+	if(index < TO_MAX_CHANNELS)
+	{
+		/* TODO */
+	}
+}
+
+
+
+void  TO_Channel_UnlockByRef(TO_ChannelData_t *channel)
+{
+	if(index < TO_MAX_CHANNELS)
+	{
+		/* TODO */
+	}
+}
+
+
+
+int32 TO_Channel_InitAll(void)
+{
+	uint32 i = 0;
+	int iStatus = 0;
+
+	for(i = 0; i < TO_MAX_CHANNELS; ++i)
+	{
+		iStatus = TO_Channel_Init(i);
+		if(iStatus != 0)
+		{
+			goto end_of_function;
+		}
+	}
+
+end_of_function:
+	return iStatus;
+}
+
+
+
+int32 TO_Channel_Init(uint32 index)
+{
+	int iStatus = 0;
+
+	if(index >= TO_MAX_CHANNELS)
+	{
+		iStatus == -1;
+		goto end_of_function;
+	}
+
+end_of_function:
+	return iStatus;
+}
+
+
+
+void TO_Channel_CleanupAll(void)
+{
+	uint32 i = 0;
+
+	for(i = 0; i < TO_MAX_CHANNELS; ++i)
+	{
+		TO_Channel_Cleanup(i);
+	}
+
+}
+
+
+
+void TO_Channel_Cleanup(uint32 index)
+{
+	if(index < TO_MAX_CHANNELS)
+	{
+		/* TODO */
+	}
+}
+
+
+
