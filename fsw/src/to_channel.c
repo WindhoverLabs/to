@@ -12,7 +12,7 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 		char *DumpTableName)
 {
 	uint32 iStatus = -1;
-	char pipeName[OS_MAX_PATH_LEN];
+	char pipeName[OS_MAX_API_NAME];
 	TO_ChannelData_t *channel;
 
 	if(index >= TO_MAX_CHANNELS)
@@ -22,6 +22,8 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 	}
 
 	channel = &TO_AppData.ChannelData[index];
+
+	TO_Channel_LockByRef(channel);
 
     if(channel->State == TO_CHANNEL_CLOSED)
     {
@@ -39,6 +41,7 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 		iStatus = TO_OutputQueue_Buildup(channel);
 		if(iStatus != 0)
 		{
+			TO_Channel_UnlockByRef(channel);
 			goto end_of_function;
 		}
 
@@ -52,6 +55,7 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 									 "Failed to create channel '%s' pipe (0x%08X)",
 									 ChannelName,
 									 (unsigned int)iStatus);
+			TO_Channel_UnlockByRef(channel);
 			goto end_of_function;
 		}
 
@@ -63,9 +67,11 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 							  "Failed to init config tables (0x%08X)",
 							  (unsigned int)iStatus);
 			channel->State = TO_CHANNEL_CLOSED;
+			TO_Channel_UnlockByRef(channel);
 			goto end_of_function;
 		}
     }
+	TO_Channel_UnlockByRef(channel);
 
 end_of_function:
 	return iStatus;
@@ -90,8 +96,10 @@ int32 TO_Channel_ProcessTelemetryAll(void)
 
 int32 TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel)
 {
+	TO_Channel_LockByRef(channel);
 	TO_Classifier_Run(channel);
 	TO_Scheduler_Run(channel);
+	TO_Channel_UnlockByRef(channel);
 }
 
 
@@ -115,12 +123,12 @@ int32 TO_Channel_ResetCountsAll(void)
 
 int32 TO_Channel_ResetCounts(TO_ChannelData_t *channel)
 {
+	TO_Channel_LockByRef(channel);
 	TO_MessageFlow_ResetCountsAll(channel);
 	TO_PriorityQueue_ResetCountsAll(channel);
 	TO_OutputQueue_ResetCounts(channel);
+	TO_Channel_UnlockByRef(channel);
 }
-
-
 
 void  TO_Channel_LockByIndex(uint32 index)
 {
@@ -146,20 +154,14 @@ void  TO_Channel_UnlockByIndex(uint32 index)
 
 void  TO_Channel_LockByRef(TO_ChannelData_t *channel)
 {
-	if(index < TO_MAX_CHANNELS)
-	{
-		/* TODO */
-	}
+	OS_MutSemTake(channel->MutexID);
 }
 
 
 
 void  TO_Channel_UnlockByRef(TO_ChannelData_t *channel)
 {
-	if(index < TO_MAX_CHANNELS)
-	{
-		/* TODO */
-	}
+	OS_MutSemGive(channel->MutexID);
 }
 
 
@@ -187,12 +189,17 @@ end_of_function:
 int32 TO_Channel_Init(uint32 index)
 {
 	int iStatus = 0;
+	char mutexName[OS_MAX_API_NAME];
 
 	if(index >= TO_MAX_CHANNELS)
 	{
 		iStatus == -1;
 		goto end_of_function;
 	}
+
+	TO_ChannelData_t *channel = &TO_AppData.ChannelData[index];
+	snprintf(mutexName, OS_MAX_API_NAME, "TO_MUT_%u", (unsigned int)index);
+	iStatus = OS_MutSemCreate(&channel->MutexID, mutexName, 0);
 
 end_of_function:
 	return iStatus;
@@ -217,7 +224,8 @@ void TO_Channel_Cleanup(uint32 index)
 {
 	if(index < TO_MAX_CHANNELS)
 	{
-		/* TODO */
+		TO_ChannelData_t *channel = &TO_AppData.ChannelData[index];
+		OS_MutSemDelete(channel->MutexID);
 	}
 }
 

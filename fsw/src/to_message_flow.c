@@ -194,11 +194,14 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
     }
     channel = &TO_AppData.ChannelData[ChannelIdx];
 
+	TO_Channel_LockByRef(channel);
+
     /* Next, see if the channel is open. */
     if(channel->State != TO_CHANNEL_OPENED)
     {
     	(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
     		"Channel not open.");
+    	TO_Channel_UnlockByRef(channel);
     	goto end_of_function;
     }
 
@@ -210,6 +213,7 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
     	/* A message flow already exists.  Reject the request. */
 		(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
 	                      "Message flow is already defined.");
+    	TO_Channel_UnlockByRef(channel);
 		goto end_of_function;
     }
 
@@ -231,6 +235,7 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
 				(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
 						"Priority Queue Index %u is invalid.",
 						PQueueIdx);
+		    	TO_Channel_UnlockByRef(channel);
 				goto end_of_function;
 			}
 
@@ -245,6 +250,7 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
 						"Message flow failed to subscribe to (0x%08X). (%i)",
 						MsgID,
 						(unsigned int)iStatus);
+		    	TO_Channel_UnlockByRef(channel);
 				goto end_of_function;
 			}
 
@@ -263,6 +269,8 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
 			added = TRUE;
 		}
 	}
+
+	TO_Channel_UnlockByRef(channel);
 
 end_of_function:
 	return added;
@@ -293,11 +301,14 @@ boolean TO_MessageFlow_Remove(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
     }
     channel = &TO_AppData.ChannelData[ChannelIdx];
 
+	TO_Channel_LockByRef(channel);
+
     /* Next, see if the channel is open. */
     if(channel->State != TO_CHANNEL_OPENED)
     {
     	(void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID, CFE_EVS_ERROR,
     		"Channel not open.");
+    	TO_Channel_UnlockByRef(channel);
     	goto end_of_function;
     }
 
@@ -308,6 +319,7 @@ boolean TO_MessageFlow_Remove(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
     	/* A message flow does not exist.  Reject the request. */
 		(void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID, CFE_EVS_ERROR,
 	                      "Message flow is not defined.");
+    	TO_Channel_UnlockByRef(channel);
 		goto end_of_function;
     }
 
@@ -322,6 +334,7 @@ boolean TO_MessageFlow_Remove(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
 				"Message flow failed to unsubscribe from 0x%08X. (%i)",
 				msgFlow->MsgId,
 				(unsigned int)iStatus);
+    	TO_Channel_UnlockByRef(channel);
 		goto end_of_function;
 	}
 
@@ -331,6 +344,8 @@ boolean TO_MessageFlow_Remove(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
 	channel->ConfigTblPtr->MessageFlow[msgFlowIndex].PQueueID = 0;
 	channel->DumpTbl.MessageFlow[msgFlowIndex].DroppedMsgCnt = 0;
 	channel->DumpTbl.MessageFlow[msgFlowIndex].QueuedMsgCnt = 0;
+
+	TO_Channel_UnlockByRef(channel);
 
 	CFE_TBL_Modified(channel->ConfigTblHdl);
 	CFE_TBL_Modified(channel->DumpTblHdl);
@@ -365,11 +380,14 @@ boolean TO_MessageFlow_Query(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
     }
     channel = &TO_AppData.ChannelData[ChannelIdx];
 
+	TO_Channel_LockByRef(channel);
+
     /* Next, see if the channel is open. */
     if(channel->State != TO_CHANNEL_OPENED)
     {
     	(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR,
     		"Channel not open.");
+    	TO_Channel_UnlockByRef(channel);
     	goto end_of_function;
     }
 
@@ -388,6 +406,8 @@ boolean TO_MessageFlow_Query(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID)
 			break;
 		}
 	}
+
+	TO_Channel_UnlockByRef(channel);
 
 	if(found != TRUE)
 	{

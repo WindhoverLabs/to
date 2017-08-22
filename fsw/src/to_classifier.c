@@ -62,7 +62,6 @@ void TO_Classifier_Run(TO_ChannelData_t* channel)
 				else
 				{
 					/* Queue is full.  Increment counters and drop the message. */
-					TO_AppData.HkTlm.usTotalMsgDropped++;
 					channel->DumpTbl.MessageFlow[msgFlowIndex].DroppedMsgCnt++;
 					channel->DumpTbl.PriorityQueue[pQueueIndex].DroppedMsgCnt++;
 					CFE_EVS_SendEvent(TO_MSG_DROP_FROM_FLOW_DBG_EID, CFE_EVS_DEBUG,

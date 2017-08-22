@@ -212,6 +212,8 @@ void TO_AcquireAllTables()
 
     for(i = 0; i < TO_MAX_CHANNELS; ++i)
     {
+		TO_Channel_LockByIndex(i);
+
     	if(TO_AppData.ChannelData[i].State == TO_CHANNEL_OPENED)
     	{
     		iStatus = CFE_TBL_GetStatus(TO_AppData.ChannelData[i].ConfigTblHdl);
@@ -260,6 +262,8 @@ void TO_AcquireAllTables()
 				}
 			}
     	}
+
+		TO_Channel_UnlockByIndex(i);
     }
 }
 

@@ -246,11 +246,14 @@ boolean TO_PriorityQueue_Query(uint16 ChannelIdx, uint16 PQueueIdx)
     }
     channel = &TO_AppData.ChannelData[ChannelIdx];
 
+	TO_Channel_LockByRef(channel);
+
     /* Next, see if the channel is open. */
     if(channel->State != TO_CHANNEL_OPENED)
     {
     	(void) CFE_EVS_SendEvent(TO_PQUEUE_INFO_EID, CFE_EVS_ERROR,
     		"Channel not open.");
+    	TO_Channel_UnlockByRef(channel);
     	goto end_of_function;
     }
 
@@ -273,6 +276,8 @@ boolean TO_PriorityQueue_Query(uint16 ChannelIdx, uint16 PQueueIdx)
 							  channel->DumpTbl.PriorityQueue[PQueueIdx].HighwaterMark);
 		rc = TRUE;
 	}
+
+	TO_Channel_UnlockByRef(channel);
 
 end_of_function:
 	return rc;
