@@ -36,7 +36,7 @@ struct TO_ChannelData_t
     /** \brief Dump Table Name */
     char DumpTableName[OS_MAX_PATH_LEN];
 
-    char ChannelName[OS_MAX_PATH_LEN];
+    char ChannelName[OS_MAX_API_NAME];
 
     /** \brief Config Table Handle */
     CFE_TBL_Handle_t  ConfigTblHdl;

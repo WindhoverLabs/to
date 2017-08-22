@@ -98,7 +98,9 @@ int32 TO_OutputQueue_Teardown(TO_ChannelData_t* channel)
 							(unsigned int)iStatus);
 					goto end_of_function;
 				}
+            	OS_MutSemTake(TO_AppData.MutexID);
 			    TO_AppData.HkTlm.MemInUse -= iStatus;
+            	OS_MutSemGive(TO_AppData.MutexID);
 			}
 		}
 		if(iStatus != OS_QUEUE_EMPTY)

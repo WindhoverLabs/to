@@ -99,7 +99,9 @@ int32 TO_PriorityQueue_TeardownAll(TO_ChannelData_t *channel)
 									(unsigned int)iStatus);
 							goto end_of_function;
 						}
+	                	OS_MutSemTake(TO_AppData.MutexID);
 					    TO_AppData.HkTlm.MemInUse -= iStatus;
+	                	OS_MutSemGive(TO_AppData.MutexID);
 					}
 				}
 				if(iStatus != OS_QUEUE_EMPTY)
@@ -175,20 +177,26 @@ int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPt
     		TO_AppData.HkTlm.MemPoolHandle, bufferSize);
     if((iStatus < 0) || (TO_CopyBuffer == 0))
     {
+    	OS_MutSemTake(TO_AppData.MutexID);
         (void) CFE_EVS_SendEvent(TO_GET_POOL_ERR_EID, CFE_EVS_ERROR,
-                          "GetPoolBuf failed: size=%lu error=0x%08xi. MIU=%u PMIU=%u",
+                          "GetPoolBuf failed: size=%lu error=0x%08xi. CN='%s' MIU=%u PMIU=%u OQCC=%u",
 						  bufferSize, (int)iStatus,
+						  channel->ChannelName,
 						  (unsigned int)TO_AppData.HkTlm.MemInUse,
-						  (unsigned int)TO_AppData.HkTlm.PeakMemInUse);
+						  (unsigned int)TO_AppData.HkTlm.PeakMemInUse,
+						  (unsigned int)channel->OutputQueue.CurrentlyQueuedCnt);
+    	OS_MutSemGive(TO_AppData.MutexID);
         iStatus = -1;
         goto end_of_function;
     }
 
+	OS_MutSemTake(TO_AppData.MutexID);
     TO_AppData.HkTlm.MemInUse += iStatus;
     if(TO_AppData.HkTlm.MemInUse > TO_AppData.HkTlm.PeakMemInUse)
     {
     	TO_AppData.HkTlm.PeakMemInUse = TO_AppData.HkTlm.MemInUse;
     }
+	OS_MutSemGive(TO_AppData.MutexID);
 
     /* Copy the message into the newly allocated memory. */
     memcpy(TO_CopyBuffer, MsgPtr, bufferSize);
@@ -209,7 +217,9 @@ int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPt
                              (int)iStatus);
         	goto end_of_function;
     	}
+    	OS_MutSemTake(TO_AppData.MutexID);
 	    TO_AppData.HkTlm.MemInUse -= iStatus;
+    	OS_MutSemGive(TO_AppData.MutexID);
 	    iStatus = -1;
     }
     else if(iStatus != CFE_SUCCESS)

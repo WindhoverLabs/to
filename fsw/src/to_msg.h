@@ -191,7 +191,7 @@ typedef struct
 
     /** \totlmmnemonic \TO_TTLMSGDROP
         \brief Count of all messages dropped */
-    uint8              usTotalMsgDropped;
+    uint16             usTotalMsgDropped;
 
     /** \totlmmnemonic \TO_MEMPOOLHNDL
         \brief Memory pool handle for queued messages. */
@@ -200,6 +200,7 @@ typedef struct
     uint32 			   MemInUse;
     uint32 			   PeakMemInUse;
     uint32             MaxMem;
+    uint16             QueuedInOutputChannel[TO_MAX_CHANNELS];
   
     /* TODO:  Add declarations for additional housekeeping data here */
 
