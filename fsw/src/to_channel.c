@@ -238,3 +238,9 @@ void TO_Channel_Cleanup(uint32 index)
 
 
 
+uint8 TO_Channel_State(uint32 index)
+{
+    return TO_AppData.ChannelData[index].State;
+}
+
+

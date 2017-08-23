@@ -101,5 +101,7 @@ int32 TO_Channel_Init(uint32 index);
 void TO_Channel_CleanupAll(void);
 void TO_Channel_Cleanup(uint32 index);
 
+uint8 TO_Channel_State(uint32 index);
+
 
 #endif
