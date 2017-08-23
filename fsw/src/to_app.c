@@ -518,7 +518,6 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
             		else
             		{
                     	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
             			TO_AppData.HkTlm.usCmdCnt++;
                     	OS_MutSemGive(TO_AppData.MutexID);
     					(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_INFORMATION,
@@ -609,7 +608,25 @@ void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
             	}
             	break;
 
-            /* TODO:  Add code to process the rest of the TO commands here */
+            case TO_SEND_DIAG_CC:
+            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_SendDiagCmd_t)))
+            	{
+            		TO_SendDiagCmd_t *cmd = (TO_SendDiagCmd_t*)MsgPtr;
+
+            		if(TO_SendDiag(cmd->ChannelIdx) == FALSE)
+            		{
+                    	OS_MutSemTake(TO_AppData.MutexID);
+            			TO_AppData.HkTlm.usCmdErrCnt++;
+                    	OS_MutSemGive(TO_AppData.MutexID);
+            		}
+            		else
+            		{
+                    	OS_MutSemTake(TO_AppData.MutexID);
+            			TO_AppData.HkTlm.usCmdCnt++;
+                    	OS_MutSemGive(TO_AppData.MutexID);
+            		}
+            	}
+            	break;
 
             default:
             	TO_OutputChannel_ProcessNewCustomCmds(MsgPtr);
@@ -641,6 +658,97 @@ void TO_ReportHousekeeping()
 	OS_MutSemTake(TO_AppData.MutexID);
     CFE_SB_SendMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
 	OS_MutSemGive(TO_AppData.MutexID);
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Send TO Send Diagnostic Message                                 */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+boolean TO_SendDiag(uint16 ChannelIdx)
+{
+	uint32 iMessageFlow = 0;
+	uint32 iPQueue = 0;
+	boolean rc = FALSE;
+	TO_ChannelDiagTlm_t diagMsg;
+
+    TO_ChannelData_t *channel;
+
+    /* First, check if the channel index is valid. */
+    if(ChannelIdx >= TO_MAX_CHANNELS)
+    {
+    	(void) CFE_EVS_SendEvent(TO_CMD_SEND_DIAG_EID, CFE_EVS_ERROR,
+    		"Invalid channel index.");
+    	goto end_of_function;
+    }
+    channel = &TO_AppData.ChannelData[ChannelIdx];
+
+    CFE_SB_InitMsg(&diagMsg, TO_DIAG_TLM_MID, sizeof(diagMsg), TRUE);
+
+    diagMsg.Index = ChannelIdx;
+
+    TO_Channel_LockByRef(channel);
+
+	diagMsg.State = channel->State;
+	strncpy(diagMsg.ConfigTableName, channel->ConfigTableName,
+			sizeof(diagMsg.ConfigTableName));
+	strncpy(diagMsg.ConfigTableFileName, channel->ConfigTableFileName,
+			sizeof(diagMsg.ConfigTableFileName));
+	strncpy(diagMsg.DumpTableName, channel->DumpTableName,
+			sizeof(diagMsg.DumpTableName));
+	strncpy(diagMsg.ChannelName, channel->ChannelName,
+			sizeof(diagMsg.ChannelName));
+	diagMsg.TableID = channel->ConfigTblPtr->TableID;
+
+	for(iMessageFlow = 0; iMessageFlow < TO_MAX_MESSAGE_FLOWS; ++iMessageFlow)
+	{
+		diagMsg.MessageFlow[iMessageFlow].MsgId
+			= channel->ConfigTblPtr->MessageFlow[iMessageFlow].MsgId;
+		diagMsg.MessageFlow[iMessageFlow].MsgLimit
+			= channel->ConfigTblPtr->MessageFlow[iMessageFlow].MsgLimit;
+		diagMsg.MessageFlow[iMessageFlow].PQueueID
+			= channel->ConfigTblPtr->MessageFlow[iMessageFlow].PQueueID;
+		diagMsg.MessageFlow[iMessageFlow].DroppedMsgCnt
+			= channel->DumpTbl.MessageFlow[iMessageFlow].DroppedMsgCnt;
+		diagMsg.MessageFlow[iMessageFlow].QueuedMsgCnt
+			= channel->DumpTbl.MessageFlow[iMessageFlow].QueuedMsgCnt;
+	}
+
+	for(iPQueue = 0; iPQueue < TO_MAX_PRIORITY_QUEUES; ++iPQueue)
+	{
+		diagMsg.PQueue[iPQueue].State
+			= channel->ConfigTblPtr->PriorityQueue[iPQueue].State;
+		diagMsg.PQueue[iPQueue].MsgLimit
+			= channel->ConfigTblPtr->PriorityQueue[iPQueue].MsgLimit;
+		diagMsg.PQueue[iPQueue].QType
+			= channel->ConfigTblPtr->PriorityQueue[iPQueue].QType;
+		diagMsg.PQueue[iPQueue].DroppedMsgCnt
+			= channel->DumpTbl.PriorityQueue[iPQueue].DroppedMsgCnt;
+		diagMsg.PQueue[iPQueue].QueuedMsgCnt
+			= channel->DumpTbl.PriorityQueue[iPQueue].QueuedMsgCnt;
+		diagMsg.PQueue[iPQueue].CurrentlyQueuedCnt
+			= channel->DumpTbl.PriorityQueue[iPQueue].CurrentlyQueuedCnt;
+		diagMsg.PQueue[iPQueue].HighwaterMark
+			= channel->DumpTbl.PriorityQueue[iPQueue].HighwaterMark;
+	}
+
+	diagMsg.OQueue.SentCount
+		= channel->OutputQueue.SentCount;
+	diagMsg.OQueue.CurrentlyQueuedCnt
+		= channel->OutputQueue.CurrentlyQueuedCnt;
+	diagMsg.OQueue.HighwaterMark
+		= channel->OutputQueue.HighwaterMark;
+
+	TO_Channel_UnlockByRef(channel);
+
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&diagMsg);
+    CFE_SB_SendMsg((CFE_SB_Msg_t*)&diagMsg);
+
+    rc = TRUE;
+
+end_of_function:
+	return rc;
+
 }
 
 

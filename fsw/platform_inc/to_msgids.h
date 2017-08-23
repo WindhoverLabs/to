@@ -35,6 +35,11 @@ extern "C" {
 */
 #define TO_HK_TLM_MID              (0x08BB)
 
+/**
+** \brief Application diagnostic telemetry data
+*/
+#define TO_DIAG_TLM_MID            (0x08BC)
+
 
 #ifdef __cplusplus
 }

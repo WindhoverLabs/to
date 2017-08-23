@@ -38,7 +38,7 @@ extern "C" {
 /* Definition for config table entry */
 typedef struct
 {
-	uint8	TableID;
+	uint16	TableID;
 
 	TO_MessageFlow_t	    MessageFlow[TO_MAX_MESSAGE_FLOWS];
 	TO_PriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
@@ -46,7 +46,7 @@ typedef struct
 
 typedef struct
 {
-	uint8	TableID;
+	uint16	TableID;
 
 	TO_MessageFlowMetrics_t	  MessageFlow[TO_MAX_MESSAGE_FLOWS];
 	TO_PriorityQueueMetrics_t PriorityQueue[TO_MAX_PRIORITY_QUEUES];

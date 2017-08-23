@@ -267,6 +267,8 @@ boolean TO_MessageFlow_Add(uint16 ChannelIdx, CFE_SB_MsgId_t MsgID, uint16 MsgLi
 			CFE_TBL_Modified(channel->DumpTblHdl);
 
 			added = TRUE;
+
+			break;
 		}
 	}
 
