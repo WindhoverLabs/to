@@ -113,4 +113,25 @@ void  TO_OutputChannel_CustomCleanupAll(void);
 *************************************************************************/
 void TO_OutputChannel_ProcessNewCustomCmds(CFE_SB_Msg_t* MsgPtr);
 
+
+
+/************************************************************************/
+/** \brief Custom function to return channel mode status.
+**
+**  \par Description
+**       This function returns the status of a channel from the custom 
+**       layer.
+**
+**  \par Assumptions, External Events, and Notes:
+**       This function must be defined, though not all custom layers will
+**       have commands to process.  This function must at least raise an
+**       event when an unknown command is received.
+**
+**  \param [in]   index        The channel to return the status of
+**
+*************************************************************************/
+uint8 TO_OutputChannel_Status(uint32 index);
+
+
+
 #endif
