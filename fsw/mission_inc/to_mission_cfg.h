@@ -9,7 +9,7 @@ extern "C" {
 ** TO Mission Configuration Parameter Definitions
 */
 
-#define TO_MAX_MESSAGE_FLOWS    200
+#define TO_MAX_MESSAGE_FLOWS    50
 
 
 #ifdef __cplusplus

@@ -216,6 +216,7 @@ void TO_Channel_CleanupAll(void)
 		TO_Channel_Cleanup(i);
 	}
 
+	TO_OutputChannel_CustomCleanupAll();
 }
 
 
@@ -225,6 +226,12 @@ void TO_Channel_Cleanup(uint32 index)
 	if(index < TO_MAX_CHANNELS)
 	{
 		TO_ChannelData_t *channel = &TO_AppData.ChannelData[index];
+
+		TO_MessageFlow_TeardownAll(channel);
+		TO_PriorityQueue_TeardownAll(channel);
+		TO_OutputQueue_Teardown(channel);
+		TO_OutputChannel_CustomTeardown(index);
+
 		OS_MutSemDelete(channel->MutexID);
 	}
 }
