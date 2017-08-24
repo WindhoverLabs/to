@@ -52,19 +52,22 @@ int32 TO_MessageFlow_TeardownAll(TO_ChannelData_t* channel)
 
 	for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
 	{
-		if(channel->ConfigTblPtr->MessageFlow[i].MsgId != 0)
+		if(channel->ConfigTblPtr != 0)
 		{
-			/* Unsubscribe from message. */
-			iStatus =  CFE_SB_Unsubscribe(
-					channel->ConfigTblPtr->MessageFlow[i].MsgId,
-					channel->DataPipeId);
-			if (iStatus != CFE_SUCCESS)
+			if(channel->ConfigTblPtr->MessageFlow[i].MsgId != 0)
 			{
-				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-						"Message flow failed to unsubscribe from 0x%08X. (%i)",
+				/* Unsubscribe from message. */
+				iStatus =  CFE_SB_Unsubscribe(
 						channel->ConfigTblPtr->MessageFlow[i].MsgId,
-						(unsigned int)iStatus);
-				goto end_of_function;
+						channel->DataPipeId);
+				if (iStatus != CFE_SUCCESS)
+				{
+					(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+							"Message flow failed to unsubscribe from 0x%04x. (%i)",
+							channel->ConfigTblPtr->MessageFlow[i].MsgId,
+							(unsigned int)iStatus);
+					goto end_of_function;
+				}
 			}
 		}
 	}

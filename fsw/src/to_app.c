@@ -275,16 +275,6 @@ int32 TO_InitApp()
         goto TO_InitApp_Exit_Tag;
     }
 
-    /* Register the cleanup callback */
-    iStatus = OS_TaskInstallDeleteHandler(&TO_CleanupCallback);
-    if (iStatus != CFE_SUCCESS)
-    {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-                                 "Failed to init register cleanup callback (0x%08X)",
-                                 (unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
-
 TO_InitApp_Exit_Tag:
     if (iStatus == CFE_SUCCESS)
     {
@@ -317,7 +307,7 @@ TO_InitApp_Exit_Tag:
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-void TO_CleanupCallback()
+void TO_Cleanup()
 {
 	TO_Channel_CleanupAll();
 	OS_MutSemDelete(TO_AppData.MutexID);
@@ -861,6 +851,8 @@ void TO_AppMain()
             /* TODO: Decide what to do for other return values in TO_RcvMsg(). */
         }
     }
+
+    TO_Cleanup();
 
     /* Stop Performance Log entry */
     CFE_ES_PerfLogExit(TO_MAIN_TASK_PERF_ID);

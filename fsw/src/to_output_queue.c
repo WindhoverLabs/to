@@ -23,10 +23,8 @@ int32 TO_OutputQueue_Init(void)
 /* nothing flow down to the custom function.                       */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void TO_OutputQueue_Cleanup(void)
+void TO_OutputQueue_Cleanup(TO_ChannelData_t* channel)
 {
-	//TO_OutputQueue_Teardown();
-	//TO_OutputQueue_CustomCleanup();
 }
 
 

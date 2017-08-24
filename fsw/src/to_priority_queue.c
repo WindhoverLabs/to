@@ -78,52 +78,55 @@ int32 TO_PriorityQueue_TeardownAll(TO_ChannelData_t *channel)
 
 	for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
 	{
-		if(channel->ConfigTblPtr->PriorityQueue[i].State != TO_PQUEUE_UNUSED)
+		if(channel->ConfigTblPtr != 0)
 		{
-			if(channel->DumpTbl.PriorityQueue[i].OSALQueueID !=0)
+			if(channel->ConfigTblPtr->PriorityQueue[i].State != TO_PQUEUE_UNUSED)
 			{
-				void *buffer;
-				uint32 bufferSize = 0;
-				while(iStatus == OS_SUCCESS)
+				if(channel->DumpTbl.PriorityQueue[i].OSALQueueID !=0)
 				{
-					iStatus =  OS_QueueGet(
-							channel->DumpTbl.PriorityQueue[i].OSALQueueID,
-							&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
-					if(iStatus == OS_SUCCESS)
+					void *buffer;
+					uint32 bufferSize = 0;
+					while(iStatus == OS_SUCCESS)
 					{
-						iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)buffer);
-						if(iStatus < 0)
+						iStatus =  OS_QueueGet(
+								channel->DumpTbl.PriorityQueue[i].OSALQueueID,
+								&buffer, sizeof(buffer), &bufferSize, OS_CHECK);
+						if(iStatus == OS_SUCCESS)
 						{
-							(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-									"Failed to return message back to memory pool on tbl load. (%i)",
-									(unsigned int)iStatus);
-							goto end_of_function;
+							iStatus = CFE_ES_PutPoolBuf(TO_AppData.HkTlm.MemPoolHandle, (uint32*)buffer);
+							if(iStatus < 0)
+							{
+								(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+										"Failed to return message back to memory pool on tbl load. (%i)",
+										(unsigned int)iStatus);
+								goto end_of_function;
+							}
+							OS_MutSemTake(TO_AppData.MutexID);
+							TO_AppData.HkTlm.MemInUse -= iStatus;
+							OS_MutSemGive(TO_AppData.MutexID);
 						}
-	                	OS_MutSemTake(TO_AppData.MutexID);
-					    TO_AppData.HkTlm.MemInUse -= iStatus;
-	                	OS_MutSemGive(TO_AppData.MutexID);
 					}
-				}
-				if(iStatus != OS_QUEUE_EMPTY)
-				{
-					(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-							"Message flow failed to pop all messages from pqueue %u. (%i)",
-							(unsigned int)i,
-							(unsigned int)iStatus);
-					goto end_of_function;
-				}
-				else
-				{
-					/* Queue is empty.  Delete the queue. */
-					iStatus = OS_QueueDelete(
-							channel->DumpTbl.PriorityQueue[i].OSALQueueID);
-					if(iStatus != OS_SUCCESS)
+					if(iStatus != OS_QUEUE_EMPTY)
 					{
 						(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-								"Failed to delete priority queue %u. (%i)",
+								"Message flow failed to pop all messages from pqueue %u. (%i)",
 								(unsigned int)i,
 								(unsigned int)iStatus);
 						goto end_of_function;
+					}
+					else
+					{
+						/* Queue is empty.  Delete the queue. */
+						iStatus = OS_QueueDelete(
+								channel->DumpTbl.PriorityQueue[i].OSALQueueID);
+						if(iStatus != OS_SUCCESS)
+						{
+							(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+									"Failed to delete priority queue %u. (%i)",
+									(unsigned int)i,
+									(unsigned int)iStatus);
+							goto end_of_function;
+						}
 					}
 				}
 			}

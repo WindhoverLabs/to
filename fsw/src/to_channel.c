@@ -211,12 +211,13 @@ void TO_Channel_CleanupAll(void)
 {
 	uint32 i = 0;
 
+	TO_OutputChannel_CustomCleanupAll();
+
 	for(i = 0; i < TO_MAX_CHANNELS; ++i)
 	{
 		TO_Channel_Cleanup(i);
 	}
 
-	TO_OutputChannel_CustomCleanupAll();
 }
 
 
@@ -230,7 +231,6 @@ void TO_Channel_Cleanup(uint32 index)
 		TO_MessageFlow_TeardownAll(channel);
 		TO_PriorityQueue_TeardownAll(channel);
 		TO_OutputQueue_Teardown(channel);
-		TO_OutputChannel_CustomTeardown(index);
 
 		OS_MutSemDelete(channel->MutexID);
 	}
