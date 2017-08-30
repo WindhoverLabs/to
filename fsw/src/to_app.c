@@ -327,12 +327,31 @@ int32 TO_RcvMsg(int32 iBlocking)
     CFE_SB_MsgId_t  MsgId;
 
     /* Stop Performance Log entry */
+//	TO_ChannelData_t *channel = &TO_AppData.ChannelData[0];
+//	iStatus = OS_QueueDelete(
+//			channel->OutputQueue.OSALQueueID);
+//	if (iStatus != OS_SUCCESS)
+//	{
+//		(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+//								 "Failed to delete '%s' output channel queue. err=%i",
+//								 channel->ChannelName, (unsigned int)iStatus);
+//	}
     CFE_ES_PerfLogExit(TO_MAIN_TASK_PERF_ID);
 
 	TO_ReleaseAllTables();
 
     /* Wait for WakeUp messages from scheduler */
     iStatus = CFE_SB_RcvMsg(&MsgPtr, TO_AppData.SchPipeId, iBlocking);
+
+//	channel = &TO_AppData.ChannelData[1];
+//	iStatus = OS_QueueDelete(
+//			channel->OutputQueue.OSALQueueID);
+//	if (iStatus != OS_SUCCESS)
+//	{
+//		(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
+//								 "Failed to delete '%s' output channel queue. err=%i",
+//								 channel->ChannelName, (unsigned int)iStatus);
+//	}
 
     /* Start Performance Log entry */
     CFE_ES_PerfLogEntry(TO_MAIN_TASK_PERF_ID);

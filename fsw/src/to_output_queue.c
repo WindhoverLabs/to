@@ -56,7 +56,6 @@ int32 TO_OutputQueue_Buildup(TO_ChannelData_t* channel)
 								 "Failed to create '%s' output channel queue. err=%i",
 								 channel->ChannelName, (unsigned int)iStatus);
 		goto end_of_function;
-
 	}
 
 end_of_function:
@@ -108,20 +107,6 @@ int32 TO_OutputQueue_Teardown(TO_ChannelData_t* channel)
 					channel->ChannelName,
 					(unsigned int)iStatus);
 			goto end_of_function;
-		}
-		else
-		{
-			/* Queue is empty.  Delete the queue. */
-			iStatus = OS_QueueDelete(
-					channel->OutputQueue.OSALQueueID);
-			if(iStatus != OS_SUCCESS)
-			{
-				(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-						"Failed to delete channel '%s' output queue. (%i)",
-						channel->ChannelName,
-						(unsigned int)iStatus);
-				goto end_of_function;
-			}
 		}
 	}
 
