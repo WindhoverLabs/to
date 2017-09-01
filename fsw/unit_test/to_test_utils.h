@@ -18,9 +18,10 @@ extern "C" {
  * Function Definitions
  */
 
+void TO_Test_Setup_NoConfig(void);
 void TO_Test_Setup_EmptyConfig(void);
-void TO_Test_Setup_FullConfig(void);
-void TO_Test_Setup_InvalidConfig(void);
+//void TO_Test_Setup_FullConfig(void);
+//void TO_Test_Setup_InvalidConfig(void);
 void TO_Test_TearDown(void);
 
 

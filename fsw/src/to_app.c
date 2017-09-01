@@ -309,8 +309,8 @@ TO_InitApp_Exit_Tag:
 
 void TO_Cleanup()
 {
-	TO_Channel_CleanupAll();
-	OS_MutSemDelete(TO_AppData.MutexID);
+    TO_Channel_CleanupAll();
+    OS_MutSemDelete(TO_AppData.MutexID);
 }
 
 
