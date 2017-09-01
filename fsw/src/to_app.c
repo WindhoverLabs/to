@@ -812,6 +812,11 @@ boolean TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr,
 
 void TO_AppMain()
 {
+    /* Clear the AppData structure.  Global data appears to retain its value when an application is
+     * restarted.
+     */
+    memset(&TO_AppData, 0, sizeof(TO_AppData));
+
     /* Register the application with Executive Services */
     TO_AppData.uiRunStatus = CFE_ES_APP_RUN;
 
