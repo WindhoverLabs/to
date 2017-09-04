@@ -1119,13 +1119,13 @@ void TO_App_Test_AddTestCases(void)
     UtTest_Add(Test_TO_AppMain_ProcessNewData_InvalidMsgID, TO_Test_Setup_NoConfig, TO_Test_TearDown,
                "Test_TO_AppMain_ProcessNewData_InvalidMsgID");
 
-    ///* Commands */
-    //UtTest_Add(Test_TO_ProcessNewAppCmds_InvalidCommand, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
-               //"Test_TO_ProcessNewAppCmds_InvalidCommand");
-    //UtTest_Add(Test_TO_ProcessNewAppCmds_Noop_InvalidSize, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
-               //"Test_TO_ProcessNewAppCmds_Noop_InvalidSize");
-    //UtTest_Add(Test_TO_ProcessNewAppCmds_Noop_Nominal, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
-               //"Test_TO_ProcessNewAppCmds_Noop_Nominal");
+    /* Test for Commands */
+    UtTest_Add(Test_TO_ProcessNewAppCmds_InvalidCommand, TO_Test_Setup_NoConfig, TO_Test_TearDown,
+               "Test_TO_ProcessNewAppCmds_InvalidCommand");
+    UtTest_Add(Test_TO_ProcessNewAppCmds_Noop_InvalidSize, TO_Test_Setup_NoConfig, TO_Test_TearDown,
+               "Test_TO_ProcessNewAppCmds_Noop_InvalidSize");
+    UtTest_Add(Test_TO_ProcessNewAppCmds_Noop_Nominal, TO_Test_Setup_NoConfig, TO_Test_TearDown,
+               "Test_TO_ProcessNewAppCmds_Noop_Nominal");
     //UtTest_Add(Test_TO_ProcessNewAppCmds_Reset_Nominal, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
                //"Test_TO_ProcessNewAppCmds_Reset_Nominal");
     //UtTest_Add(Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
