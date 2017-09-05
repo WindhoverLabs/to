@@ -176,6 +176,7 @@ void TO_Test_Setup_FullConfig2(void)
     Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable2);
 }
 
+
 void TO_Test_TearDown(void) 
 {
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
