@@ -2,8 +2,6 @@
 #include "to_test_utils.h"
 #include "to_custom_stubs.h"
 #include "to_platform_cfg.h"
-
-
 #include "ut_cfe_evs_hooks.h"
 #include "ut_cfe_time_stubs.h"
 #include "ut_cfe_psp_memutils_stubs.h"
@@ -16,12 +14,10 @@
 #include "ut_cfe_sb_stubs.h"
 #include "ut_cfe_es_stubs.h"
 #include "ut_cfe_evs_stubs.h"
+#include "to_table_names.h"
 
 #include <time.h>
 
-#ifndef TO_CONFIG_TABLE_FILENAME
-#define TO_CONFIG_TABLE_FILENAME      ("/cf/apps/to_config.tbl")
-#endif
 
 /*
  * Config table for testing

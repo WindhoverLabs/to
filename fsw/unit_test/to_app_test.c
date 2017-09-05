@@ -3,6 +3,7 @@
 #include "to_app.h"
 #include "to_test_utils.h"
 #include "to_custom_stubs.h"
+#include "to_custom_hooks.h"
 
 #include "uttest.h"
 #include "ut_osapi_stubs.h"
@@ -546,11 +547,12 @@ void Test_TO_ProcessNewAppCmds_Noop_Nominal(void)
  */
 void Test_TO_ProcessNewAppCmds_Reset_Nominal(void)
 {
-	TO_NoArgCmd_t InSchMsg;
+    TO_NoArgCmd_t InSchMsg;
     TO_NoArgCmd_t InResetCmd;
     int32         DataPipe;
     int32         CmdPipe;
-	uint32        i = 0;
+    uint32        i = 0;
+    uint32        j = 0;
 
     /* The following will emulate behavior of receiving a SCH message to WAKEUP,
        and gives it a command to process. */
@@ -568,95 +570,123 @@ void Test_TO_ProcessNewAppCmds_Reset_Nominal(void)
     /* Now give all the counters we're going to clear a value to ensure that
      * the reset command actually clears them.
      */
-	TO_AppData.HkTlm.usCmdCnt = 1;
-	TO_AppData.HkTlm.usCmdErrCnt = 2;
-	TO_AppData.HkTlm.usTotalMsgDropped = 3;
-	//TO_AppData.HkTlm.usNoSerFuncCnt = 4;
+    TO_AppData.HkTlm.usCmdCnt = 1;
+    TO_AppData.HkTlm.usCmdErrCnt = 2;
+    TO_AppData.HkTlm.usTotalMsgDropped = 3;
+    TO_AppData.HkTlm.PeakMemInUse = 4;
+    
+    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+        for(j = 0; j < TO_MAX_MESSAGE_FLOWS; ++j)
+        {
+            TO_AppData.ChannelData[i].DumpTbl.MessageFlow[j].DroppedMsgCnt = 5;
+            TO_AppData.ChannelData[i].DumpTbl.MessageFlow[j].QueuedMsgCnt = 6;
+        }
+    }
+    
+    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+        for(j = 0; j < TO_MAX_PRIORITY_QUEUES; ++j)
+        {
+            TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].DroppedMsgCnt = 7;
+            TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].QueuedMsgCnt = 8;
+            TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].HighwaterMark = 9;
+        }
+    }
+    
+    for(i=0; i < TO_MAX_CHANNELS; ++i)
+    {
+        TO_AppData.ChannelData[i].OutputQueue.SentCount = 10;
+        TO_AppData.ChannelData[i].OutputQueue.HighwaterMark = 11;
+    }
 
-	//for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	//{
-		//TO_AppData.Config.MessageFlow[i].DroppedMsgCnt = 5;
-		//TO_AppData.Config.MessageFlow[i].QueuedMsgCnt = 6;
-	//}
+    /* Execute the function being tested */
+    TO_AppMain();
 
-	//for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
-	//{
-		//TO_AppData.Config.PriorityQueue[i].DroppedMsgCnt = 7;
-		//TO_AppData.Config.PriorityQueue[i].QueuedMsgCnt = 8;
-		//TO_AppData.Config.PriorityQueue[i].HighwaterMark = 9;
-	//}
+    /* Verify results */
+    UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
+    UtAssert_EventSent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION, "", "RESET Cmd Event Sent");
 
-	//TO_AppData.Config.OutputQueue.SentCount = 10;
-	//TO_AppData.Config.OutputQueue.HighwaterMark = 11;
+    UtAssert_True(TO_AppData.HkTlm.usCmdCnt == 0, "TO_AppData.HkTlm.usCmdCnt == 0");
+    UtAssert_True(TO_AppData.HkTlm.usCmdErrCnt == 0, "TO_AppData.HkTlm.usCmdErrCnt == 0");
+    UtAssert_True(TO_AppData.HkTlm.usTotalMsgDropped == 0, "TO_AppData.HkTlm.usTotalMsgDropped == 0");
+    UtAssert_True(TO_AppData.HkTlm.PeakMemInUse == 0, "TO_AppData.HkTlm.PeakMemInUse == 0");
 
-    ///* Execute the function being tested */
-    //TO_AppMain();
+    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+        for(j = 0; j < TO_MAX_MESSAGE_FLOWS; ++j)
+        {
+            UtAssert_True(TO_AppData.ChannelData[i].DumpTbl.MessageFlow[j].DroppedMsgCnt == 0, 
+                    "TO_AppData.ChannelData[i].DumpTbl.MessageFlow[j].DroppedMsgCnt == 0");
+            UtAssert_True(TO_AppData.ChannelData[i].DumpTbl.MessageFlow[j].QueuedMsgCnt == 0, 
+                    "TO_AppData.ChannelData[i].DumpTbl.MessageFlow[j].QueuedMsgCnt == 0");
+        }
+    }
 
-    ///* Verify results */
-    //UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
-    //UtAssert_EventSent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION, "", "RESET Cmd Event Sent");
+    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+        for(j = 0; j < TO_MAX_PRIORITY_QUEUES; ++j)
+        {
+            UtAssert_True(TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].DroppedMsgCnt == 0, 
+                    "TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].DroppedMsgCnt == 0");
+            UtAssert_True(TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].QueuedMsgCnt == 0, 
+                    "TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].QueuedMsgCnt == 0");
+            UtAssert_True(TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].HighwaterMark == 0, 
+                    "TO_AppData.ChannelData[i].DumpTbl.PriorityQueue[j].HighwaterMark == 0");
+        }
+    }
 
-    //UtAssert_True(TO_AppData.HkTlm.usCmdCnt == 0, "TO_AppData.HkTlm.usCmdCnt == 0");
-    //UtAssert_True(TO_AppData.HkTlm.usCmdErrCnt == 0, "TO_AppData.HkTlm.usCmdErrCnt == 0");
-    //UtAssert_True(TO_AppData.HkTlm.usTotalMsgDropped == 0, "TO_AppData.HkTlm.usTotalMsgDropped == 0");
-    //UtAssert_True(TO_AppData.HkTlm.usNoSerFuncCnt == 0, "TO_AppData.HkTlm.usNoSerFuncCnt == 0");
-
-	//for(i = 0; i < TO_MAX_MESSAGE_FLOWS; ++i)
-	//{
-		//UtAssert_True(TO_AppData.Config.MessageFlow[i].DroppedMsgCnt == 0, "TO_AppData.Config.MessageFlow[i].DroppedMsgCnt == 0");
-		//UtAssert_True(TO_AppData.Config.MessageFlow[i].QueuedMsgCnt == 0, "TO_AppData.Config.MessageFlow[i].QueuedMsgCnt == 0");
-	//}
-
-	//for(i=0; i < TO_MAX_PRIORITY_QUEUES; ++i)
-	//{
-		//UtAssert_True(TO_AppData.Config.PriorityQueue[i].DroppedMsgCnt == 0, "TO_AppData.Config.PriorityQueue[i].DroppedMsgCnt == 0");
-		//UtAssert_True(TO_AppData.Config.PriorityQueue[i].QueuedMsgCnt == 0, "TO_AppData.Config.PriorityQueue[i].QueuedMsgCnt == 0");
-		//UtAssert_True(TO_AppData.Config.PriorityQueue[i].HighwaterMark == 0, "TO_AppData.Config.PriorityQueue[i].HighwaterMark == 0");
-	//}
-
-	//UtAssert_True(TO_AppData.Config.OutputQueue.SentCount == 0, "TO_AppData.Config.OutputQueue.SentCount == 0");
-	//UtAssert_True(TO_AppData.Config.OutputQueue.HighwaterMark == 0, "TO_AppData.Config.OutputQueue.HighwaterMark == 0");
+    for(i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+        UtAssert_True(TO_AppData.ChannelData[i].OutputQueue.SentCount == 0, 
+                "TO_AppData.ChannelData[i].OutputQueue.SentCount == 0");
+        UtAssert_True(TO_AppData.ChannelData[i].OutputQueue.HighwaterMark == 0, 
+                "TO_AppData.ChannelData[i].OutputQueue.HighwaterMark == 0");
+    }
 }
 
 
 
-///**
- //* Test TO_ProcessNewAppCmds(), AddMessageFlow command, Nominal
- //*/
-//void Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx(void)
-//{
-	//TO_NoArgCmd_t InSchMsg;
-	//TO_AddMessageFlowCmd_t InCmd;
-    //int32         DataPipe;
-    //int32         CmdPipe;
+/**
+ * Test TO_ProcessNewAppCmds(), AddMessageFlow command, Nominal
+ */
+void Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx(void)
+{
+	TO_NoArgCmd_t InSchMsg;
+	TO_AddMessageFlowCmd_t InCmd;
+    int32         DataPipe;
+    int32         CmdPipe;
 
-    //CFE_SB_MsgId_t  MsgId = CFE_ES_HK_TLM_MID;
-    //uint16          MsgLimit = 1;
-    //uint16			PQueueIdx = 60;
+    CFE_SB_MsgId_t  MsgId = CFE_ES_HK_TLM_MID;
+    uint16          MsgLimit = 1;
+    uint16          PQueueIdx = TO_MAX_PRIORITY_QUEUES;
 
-    ///* The following will emulate behavior of receiving a SCH message to WAKEUP,
-       //and gives it a command to process. */
-    //DataPipe = Ut_CFE_SB_CreatePipe("TO_SCH_PIPE");
-    //CFE_SB_InitMsg (&InSchMsg, TO_SEND_TLM_MID, sizeof(InSchMsg), TRUE);
-    //Ut_CFE_SB_AddMsgToPipe(&InSchMsg, DataPipe);
+    /* The following will emulate behavior of receiving a SCH message to WAKEUP,
+       and gives it a command to process. */
+    DataPipe = Ut_CFE_SB_CreatePipe("TO_SCH_PIPE");
+    CFE_SB_InitMsg (&InSchMsg, TO_SEND_TLM_MID, sizeof(InSchMsg), TRUE);
+    Ut_CFE_SB_AddMsgToPipe(&InSchMsg, DataPipe);
 
-    //CmdPipe = Ut_CFE_SB_CreatePipe("TO_CMD_PIPE");
-    //CFE_SB_InitMsg (&InCmd, TO_CMD_MID, sizeof(InCmd), TRUE);
-    //CFE_SB_SetCmdCode((CFE_SB_MsgPtr_t)&InCmd, TO_ADD_MESSAGE_FLOW_CC);
-    //InCmd.MsgID = MsgId;
-    //InCmd.MsgLimit = MsgLimit;
-    //InCmd.PQueueIdx = PQueueIdx;
-    //Ut_CFE_SB_AddMsgToPipe(&InCmd, CmdPipe);
+    CmdPipe = Ut_CFE_SB_CreatePipe("TO_CMD_PIPE");
+    CFE_SB_InitMsg (&InCmd, TO_CMD_MID, sizeof(InCmd), TRUE);
+    CFE_SB_SetCmdCode((CFE_SB_MsgPtr_t)&InCmd, TO_ADD_MESSAGE_FLOW_CC);
+    InCmd.MsgID = MsgId;
+    InCmd.MsgLimit = MsgLimit;
+    InCmd.PQueueIdx = PQueueIdx;
+    Ut_CFE_SB_AddMsgToPipe(&InCmd, CmdPipe);
 
-    //Ut_CFE_ES_SetReturnCode(UT_CFE_ES_RUNLOOP_INDEX, FALSE, 2);
+    Ut_CFE_ES_SetReturnCode(UT_CFE_ES_RUNLOOP_INDEX, FALSE, 2);
+    
+    /* Set function hook for TO_Custom_Init */
+    TO_Custom_Test_Hooks.TO_Custom_Init_Use_Hook = TRUE;
 
-    ///* Execute the function being tested */
-    //TO_AppMain();
+    /* Execute the function being tested */
+    TO_AppMain();
 
-    ///* Verify results */
-    //UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
-    //UtAssert_EventSent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR, "", "Add Message Flow Cmd Event Sent");
-//}
+    /* Verify results */
+    UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
+    UtAssert_EventSent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR, "", "Add Message Flow Cmd Event Sent");
+}
 
 
 
@@ -695,9 +725,12 @@ void Test_TO_ProcessNewAppCmds_Reset_Nominal(void)
 
     ///* Verify results */
     //UtAssert_True(Ut_CFE_EVS_GetEventQueueDepth()==2,"Event Count = 2");
-    //UtAssert_EventSent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR, "", "Add Message Flow Cmd Event Sent");
-	//UtAssert_True(TO_AppData.Config.MessageFlow[0].MsgId == MsgId, "Add Message Flow Cmd set TO_AppData.Config.MessageFlow[0].MsgId");
-	//UtAssert_True(TO_AppData.Config.MessageFlow[0].PQueueID == PQueueIdx, "Add Message Flow Cmd set TO_AppData.Config.MessageFlow[0].PQueueID");
+    //UtAssert_EventSent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_ERROR, "", 
+            //"Add Message Flow Cmd Event Sent");
+	//UtAssert_True(TO_AppData.Config.MessageFlow[0].MsgId == MsgId, 
+            //"Add Message Flow Cmd set TO_AppData.Config.MessageFlow[0].MsgId");
+	//UtAssert_True(TO_AppData.Config.MessageFlow[0].PQueueID == PQueueIdx, 
+            //"Add Message Flow Cmd set TO_AppData.Config.MessageFlow[0].PQueueID");
 //}
 
 
@@ -1126,11 +1159,11 @@ void TO_App_Test_AddTestCases(void)
                "Test_TO_ProcessNewAppCmds_Noop_InvalidSize");
     UtTest_Add(Test_TO_ProcessNewAppCmds_Noop_Nominal, TO_Test_Setup_NoConfig, TO_Test_TearDown,
                "Test_TO_ProcessNewAppCmds_Noop_Nominal");
-    //UtTest_Add(Test_TO_ProcessNewAppCmds_Reset_Nominal, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
-               //"Test_TO_ProcessNewAppCmds_Reset_Nominal");
-    //UtTest_Add(Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
-               //"Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx");
-    //UtTest_Add(Test_TO_ProcessNewAppCmds_AddMessageFlow_AlreadyDefined, TO_Test_Setup_FullConfig, TO_Test_TearDown,
+    UtTest_Add(Test_TO_ProcessNewAppCmds_Reset_Nominal, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
+               "Test_TO_ProcessNewAppCmds_Reset_Nominal");
+    UtTest_Add(Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
+               "Test_TO_ProcessNewAppCmds_AddMessageFlow_InvalidPQueueIdx");
+    //UtTest_Add(Test_TO_ProcessNewAppCmds_AddMessageFlow_AlreadyDefined, TO_Test_Setup_FullConfig1, TO_Test_TearDown,
                //"Test_TO_ProcessNewAppCmds_AddMessageFlow_AlreadyDefined");
     //UtTest_Add(Test_TO_ProcessNewAppCmds_AddMessageFlow_Nominal, TO_Test_Setup_EmptyConfig, TO_Test_TearDown,
                //"Test_TO_ProcessNewAppCmds_AddMessageFlow_Nominal");

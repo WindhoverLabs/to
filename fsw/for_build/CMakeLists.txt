@@ -47,10 +47,14 @@ add_airliner_app_unit_test(to-ut
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_test_utils.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_testrunner.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_custom_stubs.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_custom_stubs.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_custom_hooks.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_custom_hooks.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/ut_osapi_hooks.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/ut_osapi_hooks.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/ut_cfe_es_hooks_ex.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/ut_cfe_es_hooks_ex.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/to_table_names.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_channel.c

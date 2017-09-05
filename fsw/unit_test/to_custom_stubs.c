@@ -1,4 +1,5 @@
 #include "to_app.h"
+#include "to_custom_hooks.h"
 #include "to_custom_stubs.h"
 #include "to_custom.h"
 #include "to_events.h"
@@ -11,7 +12,14 @@ TO_Custom_Returns_t TO_Custom_Test_Returns = {0};
 
 int32 TO_Custom_Init(void)
 {
+    if(TO_Custom_Test_Hooks.TO_Custom_Init_Use_Hook == TRUE)
+    {
+        return TO_Custom_InitHook();
+    }
+    else
+    {
     return TO_Custom_Test_Returns.TO_Custom_Init_Return;
+    }
 }
 
 
