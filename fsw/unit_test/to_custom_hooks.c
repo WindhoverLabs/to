@@ -86,25 +86,5 @@ int32 TO_Custom_InitHook(void)
 
     iStatus = TO_Channel_OpenChannel(0, "GROUND", TO_CONFIG_TABLENAME, TO_CONFIG_TABLE_FILENAME, TO_DUMP_TABLENAME);
 
-    for (i=0; i < TO_MAX_CHANNELS; i++)
-    {
-        if(TO_OutputChannel_Status(i) == TO_CHANNEL_ENABLED)
-        {
-            if(TO_OutputChannel_Enable(i, TO_AppCustomData.Channel[i].IP, TO_AppCustomData.Channel[i].DstPort))
-            {
-                TO_AppCustomData.Channel[i].Mode = TO_CHANNEL_DISABLED;
-            }
-            else
-            {
-                CFE_EVS_SendEvent(TO_TLMOUTENA_INF_EID, CFE_EVS_INFORMATION,
-                        "UDP telemetry output enabled channel %u to %s:%u",
-                        (unsigned int)i, TO_AppCustomData.Channel[i].IP,
-                        (unsigned int)TO_AppCustomData.Channel[i].DstPort);
-            }
-        }
-    }
-
-end_of_function:
-
     return iStatus;
 }

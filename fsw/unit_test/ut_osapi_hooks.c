@@ -697,3 +697,14 @@ uint32 OS_FindCreator(void)
 
     return i;
 }
+
+void Ut_OS_API_Clear(void)
+{
+    CFE_PSP_MemSet(&OS_task_table, 0x00, sizeof(OS_task_table));
+    CFE_PSP_MemSet(&OS_queue_table, 0x00, sizeof(OS_queue_table));
+    CFE_PSP_MemSet(&OS_bin_sem_table, 0x00, sizeof(OS_bin_sem_table));
+    CFE_PSP_MemSet(&OS_count_sem_table, 0x00, sizeof(OS_count_sem_table));
+    CFE_PSP_MemSet(&OS_mut_sem_table, 0x00, sizeof(OS_mut_sem_table));
+    
+    Ut_OS_API_Init();
+}

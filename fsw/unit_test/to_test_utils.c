@@ -1,6 +1,7 @@
 
 #include "to_test_utils.h"
 #include "to_custom_stubs.h"
+#include "to_custom_hooks.h"
 #include "to_platform_cfg.h"
 #include "ut_cfe_evs_hooks.h"
 #include "ut_cfe_time_stubs.h"
@@ -87,7 +88,7 @@ TO_ChannelTbl_t TO_FullConfigTable2 =
 		{CFE_TIME_DIAG_TLM_MID,		1,	TO_PQUEUE_MEDIUM_IDX},
 		{CFE_EVS_EVENT_MSG_MID,		32, TO_PQUEUE_LOW_IDX},
 		{CFE_SB_STATS_TLM_MID,		1,	TO_PQUEUE_LOW_IDX},
-		{CFE_ES_APP_TLM_MID,		1,	TO_PQUEUE_LOW_IDX},
+		{CFE_ES_APP_TLM_MID,		1,	TO_PQUEUE_LOW_IDX}
 	},{
 		/* Priority Queues */
 		{TO_PQUEUE_ENA, 10, TO_PRIORITY_QUEUE_TYPE_SINGLE},
@@ -109,6 +110,7 @@ void TO_Test_Setup_NoConfig(void)
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
     CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
+    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -118,6 +120,9 @@ void TO_Test_Setup_NoConfig(void)
     Ut_CFE_ES_Reset();
     Ut_OSAPI_Reset();
     Ut_OSFILEAPI_Reset();
+    
+    /* Clear queues, semaphores, etc and call init */
+    Ut_OS_API_Clear();
 }
 
 
@@ -126,6 +131,8 @@ void TO_Test_Setup_EmptyConfig(void)
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
+    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
+    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -135,16 +142,22 @@ void TO_Test_Setup_EmptyConfig(void)
     Ut_CFE_ES_Reset();
     Ut_OSAPI_Reset();
     Ut_OSFILEAPI_Reset();
+    
+    /* Clear queues, semaphores, etc and call init */
+    Ut_OS_API_Clear();
 
     Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_EmptyConfigTable);
 }
+
 
 void TO_Test_Setup_FullConfig1(void)
 {
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
-
+    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
+    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
+    
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
     Ut_CFE_TIME_Reset();
@@ -153,6 +166,9 @@ void TO_Test_Setup_FullConfig1(void)
     Ut_CFE_ES_Reset();
     Ut_OSAPI_Reset();
     Ut_OSFILEAPI_Reset();
+    
+    /* Clear queues, semaphores, etc and call init */
+    Ut_OS_API_Clear();
 
     Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable1);
 }
@@ -163,6 +179,8 @@ void TO_Test_Setup_FullConfig2(void)
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
+    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
+    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -172,6 +190,9 @@ void TO_Test_Setup_FullConfig2(void)
     Ut_CFE_ES_Reset();
     Ut_OSAPI_Reset();
     Ut_OSFILEAPI_Reset();
+    
+    /* Clear queues, semaphores, etc and call init */
+    Ut_OS_API_Clear();
 
     Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable2);
 }
