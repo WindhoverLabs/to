@@ -1177,6 +1177,114 @@ void Test_TO_AppMain_ProcessTelemetry_PriorityPreemption2(void)
 }
 
 
+/**
+ * Test TO_ProcessNewAppCmds(), QueryChannelQueue command, Nominal
+ * Mixed up message input
+ */
+void Test_TO_AppMain_ProcessTelemetry_PriorityPreemption3(void)
+{
+    TO_NoArgCmd_t InSchMsg;
+    int32         SchPipe;
+    int32         DataPipe;
+    TO_HkTlm_t    msgCfeEsHk;
+    TO_HkTlm_t    msgCfeEvsHk;
+    TO_HkTlm_t    msgCfeSbHk;
+    TO_HkTlm_t    msgCfeTblHk;
+    TO_HkTlm_t    msgCfeTimeHk;
+    TO_HkTlm_t    msgCfeTimeDiag;
+    TO_HkTlm_t    msgCfeEvsEvent;
+    TO_HkTlm_t    msgCfeSbStats;
+    TO_HkTlm_t    msgCfeEsApp;
+    TO_HkTlm_t    msgCfeTblReg;
+    TO_HkTlm_t    msgCfeSbOneSub;
+    TO_HkTlm_t    msgCfeEsShell;
+    TO_HkTlm_t    msgCfeEsMemStats;
+    TO_HkTlm_t    msgCfeHk;
+    TO_HkTlm_t    msgCfTrans;
+    TO_HkTlm_t    msgCfConfig;
+    TO_HkTlm_t    msgCfSpaceToGndPdu;
+    TO_HkTlm_t    msgCsHk;
+    uint32        chQueue0;
+
+    /* The following will emulate behavior of receiving a SCH message to WAKEUP,
+       and processing a full pipe of telemetry messages. */
+    SchPipe = Ut_CFE_SB_CreatePipe("TO_SCH_PIPE");
+    CFE_SB_InitMsg (&InSchMsg, TO_SEND_TLM_MID, sizeof(InSchMsg), TRUE);
+    Ut_CFE_SB_AddMsgToPipe(&InSchMsg, SchPipe);
+
+    DataPipe = Ut_CFE_SB_CreatePipe("TO_GROUND");
+
+    /* Initialize a bunch of telemetry messages for downlink. */
+    CFE_SB_InitMsg (&msgCfeEsHk, CFE_ES_HK_TLM_MID, sizeof(msgCfeEsHk), TRUE);
+    CFE_SB_InitMsg (&msgCfeEvsHk, CFE_EVS_HK_TLM_MID, sizeof(msgCfeEvsHk), TRUE);
+    CFE_SB_InitMsg (&msgCfeSbHk, CFE_SB_HK_TLM_MID, sizeof(msgCfeSbHk), TRUE);
+    CFE_SB_InitMsg (&msgCfeTblHk, CFE_TBL_HK_TLM_MID, sizeof(msgCfeTblHk), TRUE);
+    CFE_SB_InitMsg (&msgCfeTimeHk, CFE_TIME_HK_TLM_MID, sizeof(msgCfeTimeHk), TRUE);
+    CFE_SB_InitMsg (&msgCfeTimeDiag, CFE_TIME_DIAG_TLM_MID, sizeof(msgCfeTimeDiag), TRUE);
+    CFE_SB_InitMsg (&msgCfeEvsEvent, CFE_EVS_EVENT_MSG_MID, sizeof(msgCfeEvsEvent), TRUE);
+    CFE_SB_InitMsg (&msgCfeSbStats, CFE_SB_STATS_TLM_MID, sizeof(msgCfeSbStats), TRUE);
+    CFE_SB_InitMsg (&msgCfeEsApp, CFE_ES_APP_TLM_MID, sizeof(msgCfeEsApp), TRUE);
+
+    /* Now load up the software bus with all the messages in random 
+     * order. */
+
+    /* High priority */
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeEsHk, DataPipe);
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeEvsHk, DataPipe);
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeSbHk, DataPipe);
+    /* Low priority */
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeEvsEvent, DataPipe);
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeSbStats, DataPipe);
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeEsApp, DataPipe);
+    /* Medium priority */
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeTblHk, DataPipe);
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeTimeHk, DataPipe);
+    Ut_CFE_SB_AddMsgToPipe(&msgCfeTimeDiag, DataPipe);
+
+    /* Set return codes */
+    Ut_CFE_ES_SetReturnCode(UT_CFE_ES_RUNLOOP_INDEX, FALSE, 2);
+    
+    /* Set function hook for TO_Custom_Init */
+    TO_Custom_Test_Hooks.TO_Custom_Init_Use_Hook = TRUE;
+
+    /* Set function hooks */
+    Ut_OSAPI_SetFunctionHook(UT_OSAPI_QUEUECREATE_INDEX, &Ut_OSAPI_QueueCreateHook);
+    Ut_OSAPI_SetFunctionHook(UT_OSAPI_QUEUEPUT_INDEX, &Ut_OSAPI_QueuePutHook);
+    Ut_OSAPI_SetFunctionHook(UT_OSAPI_QUEUEGET_INDEX, &Ut_OSAPI_QueueGetHook);
+    Ut_CFE_ES_SetFunctionHook(UT_CFE_ES_GETPOOLBUF_INDEX, &Ut_CFE_ES_GetPoolBuf);
+    Ut_CFE_ES_SetFunctionHook(UT_CFE_ES_PUTPOOLBUF_INDEX, &Ut_CFE_ES_PutPoolBuf);
+
+    /* Execute the function being tested */
+    TO_AppMain();
+
+    /* Verify results */
+    Ut_OSAPI_QueueGetIdByName(&chQueue0, "TO_GROUND_OUT");
+    CFE_SB_MsgPtr_t   msgPtr = 0;
+    uint32 sizeCopied = 0;
+    int32 iStatus = 0;
+
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_ES_HK_TLM_MID, "1-1: High Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_EVS_HK_TLM_MID, "1-2: High Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_SB_HK_TLM_MID, "1-3: High Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_TBL_HK_TLM_MID, "1-4: Medium Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_TIME_HK_TLM_MID, "1-5: Medium Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_TIME_DIAG_TLM_MID, "1-6: Medium Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_EVS_EVENT_MSG_MID, "1-7: Low Priority");
+    Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(Ut_CFE_SB_GetMsgIdHook(msgPtr) == CFE_SB_STATS_TLM_MID, "1-8: Low Priority");
+    iStatus = Ut_OSAPI_QueueGetHook(chQueue0, &msgPtr, sizeof(msgPtr), &sizeCopied, OS_CHECK);
+    UtAssert_True(iStatus == OS_QUEUE_EMPTY, "1-9: EMPTY");
+}
+
+
+
 /**************************************************************************
  * Rollup Test Cases
  **************************************************************************/
@@ -1262,9 +1370,11 @@ void TO_App_Test_AddTestCases(void)
 
     /* Traffic shaping algorithm */
     UtTest_Add(Test_TO_AppMain_ProcessTelemetry_PriorityPreemption1, TO_Test_Setup_FullConfig1, TO_Test_TearDown,
-               "Test_TO_AppMain_ProcessTelemetry_PriorityPreemption");
+               "Test_TO_AppMain_ProcessTelemetry_PriorityPreemption1");
     UtTest_Add(Test_TO_AppMain_ProcessTelemetry_PriorityPreemption2, TO_Test_Setup_FullConfig2, TO_Test_TearDown,
                "Test_TO_AppMain_ProcessTelemetry_PriorityPreemption2");
+        UtTest_Add(Test_TO_AppMain_ProcessTelemetry_PriorityPreemption3, TO_Test_Setup_FullConfig2, TO_Test_TearDown,
+               "Test_TO_AppMain_ProcessTelemetry_PriorityPreemption3");
 }
 
 
