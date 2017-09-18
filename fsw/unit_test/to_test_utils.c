@@ -16,6 +16,7 @@
 #include "ut_cfe_es_stubs.h"
 #include "ut_cfe_evs_stubs.h"
 #include "to_table_names.h"
+#include "ut_osapi_hooks.h"
 
 #include <time.h>
 

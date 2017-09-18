@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include "osconfig.h"
+#include "cfe_psp.h"
 
 /*
 ** The __USE_UNIX98 is for advanced pthread features on linux
@@ -21,6 +22,9 @@
 #include "common_types.h"
 #include "osapi.h"
 #include "ut_osapi_hooks.h"
+
+/* To remove the "implicit declaration of function ‘pthread_setname_np’" warning. */
+extern int pthread_getname_np(pthread_t __target_thread, char *__name);
 
 #ifndef SEM_VALUE_MAX
 #define SEM_VALUE_MAX INT_MAX

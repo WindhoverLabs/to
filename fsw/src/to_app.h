@@ -326,6 +326,8 @@ boolean  TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr, uint16 usExpectedLen);
 
 boolean  TO_SendDiag(uint16 ChannelIdx);
 
+void TO_Cleanup(void);
+
 #ifdef __cplusplus
 }
 #endif 
