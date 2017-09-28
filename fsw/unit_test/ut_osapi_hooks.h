@@ -1,4 +1,3 @@
-
 int32 Ut_OSAPI_QueueCreateHook(uint32 *queue_id, const char *queue_name, uint32 queue_depth,
                       uint32 data_size, uint32 flags);
 int32 Ut_OSAPI_QueuePutHook(uint32 queue_id, const void *data, uint32 size, uint32 flags);

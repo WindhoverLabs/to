@@ -1,4 +1,3 @@
-
 #include "uttest.h"
 
 #include "to_app_test.h"
