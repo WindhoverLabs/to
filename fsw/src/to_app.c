@@ -112,8 +112,8 @@ int32 TO_InitEvent()
     TO_AppData.EventTbl[  ind].EventID = TO_GET_POOL_ERR_EID;
     TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
 
-    TO_AppData.EventTbl[  ind].EventID = TO_INF_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
+    TO_AppData.EventTbl[  ind].EventID = TO_NO_ENCODE_FUNC_EID;
+    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_8_STOP;
 
     TO_AppData.EventTbl[  ind].EventID = TO_CONFIG_TABLE_ERR_EID;
     TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
@@ -960,7 +960,7 @@ TO_ProtobufEncode_Exit_Tag:
 
 TO_ChannelType_t TO_GetChannelType(uint32 ChannelID)
 {
-	TO_AppData.ChannelData[ChannelID].ConfigTblPtr->ChannelType;
+	return TO_AppData.ChannelData[ChannelID].ConfigTblPtr->ChannelType;
 }
 
 
