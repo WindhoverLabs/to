@@ -358,6 +358,37 @@ boolean  TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr, uint16 usExpectedLen);
 
 boolean  TO_SendDiag(uint16 ChannelIdx);
 
+/************************************************************************/
+/** \brief Encode message with proto buffer (protobuf).
+**
+**  \par Description
+**       This function receives a SB message pointer that has a binary
+**       payload and encodes the payload with Google Proto Buffers using
+**       functions provided by the PBLib application.
+**
+**  \par Assumptions, External Events, and Notes:
+**       None
+**
+**  \param [in]      MsgIn      A #CFE_SB_MsgPtr_t that references the
+**  							original binary encoded software bus
+**  							message.
+**
+**  \param [in/out]  MsgOut     A #CFE_SB_MsgPtr_t that references the
+**                              newly encoded CCSDS message.
+**
+**  \param [in]      MsgIn      Represents the size of the MsgOut buffer
+**                              passed to it.  This ensures the function
+**                              does not exceed the size of buffer.
+**
+**  \returns
+**  #uint32 The size of the output message in bytes.
+**  \endreturns
+*************************************************************************/
+uint32 TO_ProtobufTlmEncode(CFE_SB_MsgPtr_t MsgInPtr,
+		char *Buffer, uint32 Size);
+
+TO_ChannelType_t TO_GetChannelType(uint32 ChannelID);
+
 void TO_Cleanup(void);
 
 #ifdef __cplusplus

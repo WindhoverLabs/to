@@ -66,12 +66,18 @@ extern "C" {
 *************************************************************************/
 
 
+typedef enum
+{
+	TO_OUTPUT_TYPE_BINARY	= 0,
+	TO_OUTPUT_TYPE_PROTOBUF	= 1
+} TO_ChannelType_t;
+
 /* TODO:  Add doxygen markup. */
 /* Definition for config table entry */
 typedef struct
 {
-	uint16	TableID;
-
+	uint16					TableID;
+	TO_ChannelType_t		ChannelType;
 	TO_MessageFlow_t	    MessageFlow[TO_MAX_MESSAGE_FLOWS];
 	TO_PriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
 } TO_ChannelTbl_t;

@@ -85,13 +85,13 @@ TO_Custom_Hooks_t TO_Custom_Test_Hooks;
 TO_AppCustomData_t TO_AppCustomData;
 
 
-void TO_OutputChannel_GroundChannelTask(void)
+void TO_OutputChannel_BinaryChannelTask(void)
 {
 
 }
 
 
-void TO_OutputChannel_OnboardChannelTask(void)
+void TO_OutputChannel_ProtobufChannelTask(void)
 {
 
 }
@@ -113,7 +113,7 @@ int32 TO_Custom_InitHook(void)
     strncpy(TO_AppCustomData.Channel[0].IP, "127.0.0.1", INET_ADDRSTRLEN);
     TO_AppCustomData.Channel[0].DstPort = 5011;
     TO_AppCustomData.Channel[0].Priority = 50;
-    TO_AppCustomData.Channel[0].ListenerTask = TO_OutputChannel_GroundChannelTask;
+    TO_AppCustomData.Channel[0].ListenerTask = TO_OutputChannel_BinaryChannelTask;
     TO_AppCustomData.Channel[0].Socket = 0;
     TO_AppCustomData.Channel[0].ChildTaskID = 0;
 

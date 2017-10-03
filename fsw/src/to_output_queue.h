@@ -61,6 +61,7 @@ typedef struct
 	uint16					CurrentlyQueuedCnt;
     uint16					HighwaterMark;
     uint32					OSALQueueID;
+
 } TO_OutputQueue_t;
 
 /************************************************************************

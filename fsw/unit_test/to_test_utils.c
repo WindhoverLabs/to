@@ -67,6 +67,7 @@ TO_ChannelTbl_t TO_EmptyConfigTable =
 {
     /* Table ID */
     1,
+	TO_OUTPUT_TYPE_BINARY,
     {
         /* Message Flows */
         {0, 0, 0}
@@ -85,6 +86,7 @@ TO_ChannelTbl_t TO_FullConfigTable1 =
 {
     /* Table ID */
     1,
+	TO_OUTPUT_TYPE_BINARY,
     {
         /* Message Flows */
         {CFE_ES_HK_TLM_MID,         1,  TO_PQUEUE_HIGH_IDX},
@@ -111,6 +113,7 @@ TO_ChannelTbl_t TO_FullConfigTable2 =
 {
 	/* Table ID */
 	1,
+	TO_OUTPUT_TYPE_BINARY,
 	{
 		/* Message Flows */
 		{CFE_ES_HK_TLM_MID,			1,	TO_PQUEUE_HIGH_IDX},
