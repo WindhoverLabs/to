@@ -112,5 +112,8 @@ add_airliner_app_unit_test(to-ut
 
 	WRAPPERS
 		PBLIB_GetTlmSerializationFunc
+        
+    VALGRIND_SUPPRESSION_FILE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/valgrind.supp
 )
 
