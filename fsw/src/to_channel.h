@@ -118,11 +118,11 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 		char *ConfigTableName, char *ConfigTableFileName,
 		char *DumpTableName);
 
-int32 TO_Channel_ProcessTelemetryAll(void);
-int32 TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel);
+void TO_Channel_ProcessTelemetryAll(void);
+void TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel);
 
-int32 TO_Channel_ResetCountsAll(void);
-int32 TO_Channel_ResetCounts(TO_ChannelData_t *channel);
+void TO_Channel_ResetCountsAll(void);
+void TO_Channel_ResetCounts(TO_ChannelData_t *channel);
 
 void  TO_Channel_LockByIndex(uint32 index);
 void  TO_Channel_UnlockByIndex(uint32 index);

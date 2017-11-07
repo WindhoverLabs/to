@@ -12,8 +12,8 @@
 *    notice, this list of conditions and the following disclaimer in
 *    the documentation and/or other materials provided with the
 *    distribution.
-* 3. Neither the name Windhover Labs nor the names of its 
-*    contributors may be used to endorse or promote products derived 
+* 3. Neither the name Windhover Labs nor the names of its
+*    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -50,7 +50,7 @@ int32 TO_Channel_OpenChannel(uint32 index, char *ChannelName,
 
 	if(index >= TO_MAX_CHANNELS)
 	{
-		iStatus == -1;
+		iStatus = -1;
 		goto end_of_function;
 	}
 
@@ -111,7 +111,7 @@ end_of_function:
 }
 
 
-int32 TO_Channel_ProcessTelemetryAll(void)
+void TO_Channel_ProcessTelemetryAll(void)
 {
     int32 iStatus = CFE_SUCCESS;
     uint32 i = 0;
@@ -127,7 +127,7 @@ int32 TO_Channel_ProcessTelemetryAll(void)
 }
 
 
-int32 TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel)
+void TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel)
 {
 	TO_Channel_LockByRef(channel);
 	TO_Classifier_Run(channel);
@@ -137,7 +137,7 @@ int32 TO_Channel_ProcessTelemetry(TO_ChannelData_t *channel)
 
 
 
-int32 TO_Channel_ResetCountsAll(void)
+void TO_Channel_ResetCountsAll(void)
 {
     int32 iStatus = CFE_SUCCESS;
     uint32 i = 0;
@@ -154,7 +154,7 @@ int32 TO_Channel_ResetCountsAll(void)
 
 
 
-int32 TO_Channel_ResetCounts(TO_ChannelData_t *channel)
+void TO_Channel_ResetCounts(TO_ChannelData_t *channel)
 {
 	TO_Channel_LockByRef(channel);
 	TO_MessageFlow_ResetCountsAll(channel);
@@ -226,7 +226,7 @@ int32 TO_Channel_Init(uint32 index)
 
 	if(index >= TO_MAX_CHANNELS)
 	{
-		iStatus == -1;
+		iStatus = -1;
 		goto end_of_function;
 	}
 
