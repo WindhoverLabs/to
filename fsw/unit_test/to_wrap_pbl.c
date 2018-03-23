@@ -31,10 +31,6 @@
 *
 *****************************************************************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "../../../pblib/fsw/public_inc/pb_lib.h"
 
 int PBLIB_RET_CODE = 0;
