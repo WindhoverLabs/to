@@ -31,7 +31,7 @@
 #
 #############################################################################
  
-add_airliner_app_def(to
+buildliner_add_app_def(to
     FILE TO
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/to_app.c
@@ -70,7 +70,7 @@ add_airliner_app_def(to
 )
 
 
-add_airliner_app_unit_test(to-ut
+buildliner_add_app_def(to-ut
     UTASSERT 
     NO_HELGRIND
     NO_MASSIF
@@ -118,7 +118,7 @@ add_airliner_app_unit_test(to-ut
 )
 
 
-add_airliner_app_unit_test(to-unreachable-code-ut
+buildliner_add_app_def(to-unreachable-code-ut
     UTASSERT 
     NO_HELGRIND
     NO_MASSIF
