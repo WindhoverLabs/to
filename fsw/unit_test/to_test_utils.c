@@ -32,7 +32,6 @@
 *****************************************************************************/
 
 #include "to_test_utils.h"
-#include "to_custom_stubs.h"
 #include "to_custom_hooks.h"
 #include "to_platform_cfg.h"
 #include "ut_cfe_evs_hooks.h"
@@ -51,6 +50,7 @@
 #include "ut_osapi_hooks.h"
 
 #include <time.h>
+#include "ut_to_custom_stubs.h"
 
 
 /*
@@ -66,8 +66,7 @@
 TO_ChannelTbl_t TO_EmptyConfigTable =
 {
     /* Table ID */
-    1,
-	TO_OUTPUT_TYPE_BINARY,
+    0,
     {
         /* Message Flows */
         {0, 0, 0}
@@ -82,11 +81,23 @@ TO_ChannelTbl_t TO_EmptyConfigTable =
 };
 
 
+TO_ChannelTbl_t TO_NoPQueueConfigTable =
+{
+    /* Table ID */
+    0,
+    {
+        /* Message Flows */
+        {0, 0, 0}
+    },{
+        /* Priority Queues */
+    }
+};
+
+
 TO_ChannelTbl_t TO_FullConfigTable1 =
 {
     /* Table ID */
     1,
-	TO_OUTPUT_TYPE_BINARY,
     {
         /* Message Flows */
         {CFE_ES_HK_TLM_MID,         1,  TO_PQUEUE_HIGH_IDX},
@@ -102,9 +113,9 @@ TO_ChannelTbl_t TO_FullConfigTable1 =
         /* Priority Queues */
         {TO_PQUEUE_ENA, 10, TO_PRIORITY_QUEUE_TYPE_SINGLE},
         {TO_PQUEUE_ENA, 10, TO_PRIORITY_QUEUE_TYPE_FIFO},
-        {TO_PQUEUE_ENA, 2, TO_PRIORITY_QUEUE_TYPE_FIFO},
-        {TO_PQUEUE_ENA, 3, TO_PRIORITY_QUEUE_TYPE_FIFO},
-        {TO_PQUEUE_ENA, 4, TO_PRIORITY_QUEUE_TYPE_FIFO}
+        {TO_PQUEUE_ENA,  2, TO_PRIORITY_QUEUE_TYPE_FIFO},
+        {TO_PQUEUE_ENA,  3, TO_PRIORITY_QUEUE_TYPE_FIFO},
+        {TO_PQUEUE_ENA,  4, TO_PRIORITY_QUEUE_TYPE_FIFO}
     }
 };
 
@@ -113,7 +124,6 @@ TO_ChannelTbl_t TO_FullConfigTable2 =
 {
 	/* Table ID */
 	1,
-	TO_OUTPUT_TYPE_BINARY,
 	{
 		/* Message Flows */
 		{CFE_ES_HK_TLM_MID,			1,	TO_PQUEUE_HIGH_IDX},
@@ -129,11 +139,12 @@ TO_ChannelTbl_t TO_FullConfigTable2 =
 		/* Priority Queues */
 		{TO_PQUEUE_ENA, 10, TO_PRIORITY_QUEUE_TYPE_SINGLE},
 		{TO_PQUEUE_ENA, 10, TO_PRIORITY_QUEUE_TYPE_FIFO},
-		{TO_PQUEUE_ENA, 4, TO_PRIORITY_QUEUE_TYPE_FIFO},
-		{TO_PQUEUE_ENA, 3, TO_PRIORITY_QUEUE_TYPE_FIFO},
-		{TO_PQUEUE_ENA, 2, TO_PRIORITY_QUEUE_TYPE_FIFO}
+		{TO_PQUEUE_ENA,  4, TO_PRIORITY_QUEUE_TYPE_FIFO},
+		{TO_PQUEUE_ENA,  3, TO_PRIORITY_QUEUE_TYPE_FIFO},
+		{TO_PQUEUE_ENA,  2, TO_PRIORITY_QUEUE_TYPE_FIFO}
 	}
 };
+
 
 
 /*
@@ -145,8 +156,8 @@ void TO_Test_Setup_NoConfig(void)
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
-    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
-    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
+
+    Ut_TO_Custom_Reset();
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -167,8 +178,8 @@ void TO_Test_Setup_EmptyConfig(void)
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
-    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
-    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
+
+    Ut_TO_Custom_Reset();
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -182,7 +193,28 @@ void TO_Test_Setup_EmptyConfig(void)
     /* Clear queues, semaphores, etc and call init */
     Ut_OS_API_Clear();
 
-    Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_EmptyConfigTable);
+    Ut_CFE_TBL_AddTable(TO_UDP_CONFIG_TABLE_FILENAME, (void *) &TO_EmptyConfigTable);
+}
+
+
+void TO_Test_Setup_NoPQueueConfig(void)
+{
+    /* initialize test environment to default state for every test */
+
+    CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
+
+    Ut_TO_Custom_Reset();
+
+    Ut_CFE_EVS_Reset();
+    Ut_CFE_FS_Reset();
+    Ut_CFE_TIME_Reset();
+    Ut_CFE_TBL_Reset();
+    Ut_CFE_SB_Reset();
+    Ut_CFE_ES_Reset();
+    Ut_OSAPI_Reset();
+    Ut_OSFILEAPI_Reset();
+
+    Ut_CFE_TBL_AddTable(TO_UDP_CONFIG_TABLE_FILENAME, (void *) &TO_NoPQueueConfigTable);
 }
 
 
@@ -191,8 +223,8 @@ void TO_Test_Setup_FullConfig1(void)
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
-    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
-    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
+
+    Ut_TO_Custom_Reset();
     
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -206,7 +238,7 @@ void TO_Test_Setup_FullConfig1(void)
     /* Clear queues, semaphores, etc and call init */
     Ut_OS_API_Clear();
 
-    Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable1);
+    Ut_CFE_TBL_AddTable(TO_UDP_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable1);
 }
 
 
@@ -215,8 +247,8 @@ void TO_Test_Setup_FullConfig2(void)
     /* initialize test environment to default state for every test */
 
     CFE_PSP_MemSet(&TO_AppData, 0x00, sizeof(TO_AppData_t));
-    CFE_PSP_MemSet(&TO_Custom_Test_Returns, 0x00, sizeof(TO_Custom_Test_Returns));
-    CFE_PSP_MemSet(&TO_Custom_Test_Hooks, 0x00, sizeof(TO_Custom_Test_Hooks));
+
+    Ut_TO_Custom_Reset();
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();
@@ -230,8 +262,9 @@ void TO_Test_Setup_FullConfig2(void)
     /* Clear queues, semaphores, etc and call init */
     Ut_OS_API_Clear();
 
-    Ut_CFE_TBL_AddTable(TO_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable2);
+    Ut_CFE_TBL_AddTable(TO_UDP_CONFIG_TABLE_FILENAME, (void *) &TO_FullConfigTable2);
 }
+
 
 
 void TO_Test_TearDown(void) 

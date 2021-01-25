@@ -57,12 +57,23 @@
 */
 typedef struct
 {
-	uint16					SentCount;
-	uint16					CurrentlyQueuedCnt;
-    uint16					HighwaterMark;
-    uint32					OSALQueueID;
+    /** \brief OSAL queue descriptor */
+    uint32                  OSALQueueID;
+    
+    /** \brief Count of the number of bytes sent from the output queue */
+    uint32                  SentBytes;
+    
+    /** \brief Count of the number of messages sent from the output queue */
+    uint32                  SentCount;
+    
+    /** \brief Count of the number of messages currently queued on output queue */
+    uint16                  CurrentlyQueuedCnt;
+    
+    /** \brief Count of the number of bytes sent from the output queue */
+    uint16                  HighwaterMark;
 
 } TO_OutputQueue_t;
+
 
 /************************************************************************
 ** External Global Variables

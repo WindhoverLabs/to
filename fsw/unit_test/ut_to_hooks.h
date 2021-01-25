@@ -31,19 +31,16 @@
 *
 *****************************************************************************/
 
-#include "uttest.h"
+#include "cfe.h"
+#include "to_channel.h"
 
-#include "to_app_test.h"
-//#include "to_cmds_test.h"
-//#include "to_config_tbl_test.h"
-
-int main(void)
-{   
-    TO_App_Test_AddTestCases();
-//    TO_Cmds_Test_AddTestCases();
-//    TO_Config_Tbl_Test_AddTestCases();
-
-    return(UtTest_Run());
-
-}
+uint8  Ut_TO_Channel_State(uint8 index);
+void   Ut_TO_Channel_LockByIndex(uint8 index);
+void   Ut_TO_Channel_UnlockByIndex(uint8 index);
+void   Ut_TO_Channel_LockByRef(TO_ChannelData_t *channel);
+void   Ut_TO_Channel_UnlockByRef(TO_ChannelData_t *channel);
+TO_MessageFlow_t* Ut_TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *Index);
+int32 TO_Channel_OpenChannel(const uint32 index, const char *ChannelName,
+        const char *ConfigTableName, const char *ConfigTableFileName, TO_ChannelTbl_t *BackupTbl,
+        const char *DumpTableName, const uint32 CfCntSemMax, const char *CfCntSemName);
 

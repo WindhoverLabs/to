@@ -44,10 +44,11 @@
 #include <arpa/inet.h>
 #include "to_table_names.h"
 
+extern TO_ChannelTbl_t TO_EmptyConfigTable;
+
 typedef enum {
     /* TODO:  Add Doxygen markup. */
-    TO_TLMOUTSOCKET_ERR_EID = TO_EVT_CNT,
-    TO_TLMOUTENA_INF_EID,
+    TO_TLMOUTENA_INF_EID = TO_EVT_CNT,
     TO_TLMOUTENA_ERR_EID,
     TO_TLMOUTSTOP_ERR_EID,
     TO_CUSTOM_EVT_CNT
@@ -71,6 +72,7 @@ typedef struct
     CFE_ES_ChildTaskMainFuncPtr_t   ListenerTask;
     int                             Socket;
     uint32                          ChildTaskID;
+    uint8                           State;
 } TO_TlmChannels_t;
 
 
@@ -85,20 +87,9 @@ TO_Custom_Hooks_t TO_Custom_Test_Hooks;
 TO_AppCustomData_t TO_AppCustomData;
 
 
-void TO_OutputChannel_BinaryChannelTask(void)
+void TO_OutputChannel_GroundChannelTask(void)
 {
 
-}
-
-
-void TO_OutputChannel_ProtobufChannelTask(void)
-{
-
-}
-
-int32 TO_OutputChannel_Enable(uint8 ChannelID, const char *DestinationAddress, uint16 DestinationPort)
-{
-    return 0;
 }
 
 
@@ -113,11 +104,57 @@ int32 TO_Custom_InitHook(void)
     strncpy(TO_AppCustomData.Channel[0].IP, "127.0.0.1", INET_ADDRSTRLEN);
     TO_AppCustomData.Channel[0].DstPort = 5011;
     TO_AppCustomData.Channel[0].Priority = 50;
-    TO_AppCustomData.Channel[0].ListenerTask = TO_OutputChannel_BinaryChannelTask;
+    TO_AppCustomData.Channel[0].ListenerTask = TO_OutputChannel_GroundChannelTask;
     TO_AppCustomData.Channel[0].Socket = 0;
     TO_AppCustomData.Channel[0].ChildTaskID = 0;
 
-    iStatus = TO_Channel_OpenChannel(0, "GROUND", TO_CONFIG_TABLENAME, TO_CONFIG_TABLE_FILENAME, TO_DUMP_TABLENAME);
+    iStatus = TO_Channel_OpenChannel(0, "UDP", TO_UDP_CONFIG_TABLENAME, TO_UDP_CONFIG_TABLE_FILENAME, &TO_EmptyConfigTable, TO_DUMP_TABLENAME, TO_UDP_CF_MAX_PDUS, TO_UDP_CF_THROTTLE_SEM_NAME);
+    if(iStatus == CFE_SUCCESS) {
+        TO_AppCustomData.Channel[0].State = TO_CHANNEL_OPENED;
+    }
+    
+    return iStatus;
+}
+int32 TO_Custom_InitHook4(void)
+{
+    int32 iStatus = 0;
+    uint32 i = 0;
+    
+    memset(&TO_AppCustomData, 0, sizeof(TO_AppCustomData));
+    
+    TO_AppCustomData.Channel[0].Mode = TO_CHANNEL_ENABLED;
+    strncpy(TO_AppCustomData.Channel[0].IP, "127.0.0.1", INET_ADDRSTRLEN);
+    TO_AppCustomData.Channel[0].DstPort = 5011;
+    TO_AppCustomData.Channel[0].Priority = 50;
+    TO_AppCustomData.Channel[0].ListenerTask = TO_OutputChannel_GroundChannelTask;
+    TO_AppCustomData.Channel[0].Socket = 0;
+    TO_AppCustomData.Channel[0].ChildTaskID = 0;
+
+    iStatus = TO_Channel_OpenChannel(0, "UDP", TO_UDP_CONFIG_TABLENAME, TO_UDP_CONFIG_TABLE_FILENAME, &TO_EmptyConfigTable, TO_DUMP_TABLENAME, TO_UDP_CF_MAX_PDUS, TO_UDP_CF_THROTTLE_SEM_NAME);
+    
+    TO_AppCustomData.Channel[0].State = TO_CHANNEL_OPENED;
+
+    return iStatus;
+}
+
+int32 TO_Custom_InitHook5(void)
+{
+    int32 iStatus = 0;
+    uint32 i = 0;
+    
+    memset(&TO_AppCustomData, 0, sizeof(TO_AppCustomData));
+    
+    TO_AppCustomData.Channel[0].Mode = TO_CHANNEL_ENABLED;
+    strncpy(TO_AppCustomData.Channel[0].IP, "127.0.0.1", INET_ADDRSTRLEN);
+    TO_AppCustomData.Channel[0].DstPort = 5011;
+    TO_AppCustomData.Channel[0].Priority = 50;
+    TO_AppCustomData.Channel[0].ListenerTask = TO_OutputChannel_GroundChannelTask;
+    TO_AppCustomData.Channel[0].Socket = 0;
+    TO_AppCustomData.Channel[0].ChildTaskID = 0;
+
+    iStatus = TO_Channel_OpenChannel(0, "UDP", TO_UDP_CONFIG_TABLENAME, TO_UDP_CONFIG_TABLE_FILENAME, &TO_EmptyConfigTable, TO_DUMP_TABLENAME, TO_UDP_CF_MAX_PDUS, TO_UDP_CF_THROTTLE_SEM_NAME);
+    
+    TO_AppCustomData.Channel[0].State = TO_CHANNEL_OPENED;
 
     return iStatus;
 }

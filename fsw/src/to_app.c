@@ -53,19 +53,8 @@
 #include "to_output_queue.h"
 #include "to_custom.h"
 #include "to_channel.h"
-#include "pb_lib.h"
-
-/************************************************************************
-** Local Defines
-*************************************************************************/
-
-/************************************************************************
-** Local Structure Declarations
-*************************************************************************/
-
-/************************************************************************
-** External Global Variables
-*************************************************************************/
+#include "to_tbldefs.h"
+#include "to_verify.h"
 
 /************************************************************************
 ** Global Variables
@@ -75,70 +64,147 @@ TO_AppData_t  TO_AppData;
 /************************************************************************
 ** Local Variables
 *************************************************************************/
-uint32  TO_MemPoolDefSize[TO_MAX_MEMPOOL_BLK_SIZES] =
-{
-    TO_MAX_BLOCK_SIZE,
-	TO_MEM_BLOCK_SIZE_07,
-    TO_MEM_BLOCK_SIZE_06,
-	TO_MEM_BLOCK_SIZE_05,
-	TO_MEM_BLOCK_SIZE_04,
-	TO_MEM_BLOCK_SIZE_03,
-	TO_MEM_BLOCK_SIZE_02,
-	TO_MEM_BLOCK_SIZE_01
-};
+static TO_ChannelDiagTlm_t diagMsg;
+static TO_MsgFlowListPkt_t msgFlowDiagPkt;
 
 /************************************************************************
 ** Local Function Definitions
 *************************************************************************/
+
+/**
+ * \brief Take individual initialization function's results returns overall TO application
+ *        initialization result.
+ *
+ * \par This function supports the command, and therefore is only called in the context
+ * of the main TO task, not one of the TO output tasks.
+ *
+ * @param status TO individual initialization function results
+ *
+ * @param events Result of call to TO_InitEvent, if events is T then TO has initialized
+ *               event tables (has events).
+ *
+ * @return CFE_SUCCESS = TO application initialized without error, Not CFE_SUCCESS = TO application failed initialization
+ */
+static int32 TO_InitAppResult(int32 status, osalbool events);
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* Initialize event tables                                         */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-int32 TO_InitEvent()
+int32 TO_InitEvent(void)
 {
-    int32  iStatus=CFE_SUCCESS;
+    int32  regStatus = CFE_SUCCESS;
+    int32  customStatus = CFE_SUCCESS;
     int32  ind = 0;
+    uint32 channelID = 0;
 
     /* Initialize the event filter table.
      * Note: 0 is the CFE_EVS_NO_FILTER mask and event 0 is reserved (not used) */
-    memset((void*)TO_AppData.EventTbl, 0x00, sizeof(TO_AppData.EventTbl));
+    (void) CFE_PSP_MemSet((void*)TO_AppData.EventTbl, 0x00, sizeof(TO_AppData.EventTbl));
 
-    /* TODO: Choose the events you want to filter.  CFE_EVS_MAX_EVENT_FILTERS
-     * limits the number of filters per app.  An explicit CFE_EVS_NO_FILTER 
+    /* Choose the events you want to filter.  CFE_EVS_MAX_EVENT_FILTERS
+     * limits the number of filters per app.  An explicit CFE_EVS_NO_FILTER
      * (the default) has been provided as an example. */
-    TO_AppData.EventTbl[  ind].EventID = TO_GET_POOL_ERR_EID;
+
+    TO_AppData.EventTbl[  ind].EventID = TO_MSG_ID_ERR_EID;
     TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
 
-    TO_AppData.EventTbl[  ind].EventID = TO_NO_ENCODE_FUNC_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_8_STOP;
+    TO_AppData.EventTbl[  ind].EventID = TO_PIPE_READ_ERR_EID;
+    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
 
-    TO_AppData.EventTbl[  ind].EventID = TO_CONFIG_TABLE_ERR_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
+    TO_AppData.EventTbl[  ind].EventID = TO_MSG_LEN_ERR_EID;
+    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
+    
+    TO_AppData.EventTbl[  ind].EventID = TO_TLM_MSG_LEN_ERR_EID;
+    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
+        
+    TO_AppData.EventTbl[  ind].EventID = TO_SB_RECEIVE_ERR_EID;
+    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;    
 
-    TO_AppData.EventTbl[  ind].EventID = TO_PIPE_ERR_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
-
-    TO_AppData.EventTbl[  ind].EventID = TO_MSGID_ERR_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
-
-    TO_AppData.EventTbl[  ind].EventID = TO_MSGLEN_ERR_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
-
-    TO_AppData.EventTbl[  ind].EventID = TO_MSGLEN_ERR_EID;
-    TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_NO_FILTER;
-
-    /* Register the table with CFE */
-    iStatus = CFE_EVS_Register(TO_AppData.EventTbl,
-                               TO_EVT_CNT, CFE_EVS_BINARY_FILTER);
-    if (iStatus != CFE_SUCCESS)
+    for (channelID = 0; channelID < TO_MAX_CHANNELS; channelID++)
     {
-        (void) CFE_ES_WriteToSysLog("TO - Failed to register with EVS (0x%08X)\n", (unsigned int)iStatus);
+        TO_AppData.EventTbl[  ind].EventID = TO_MSG_ID_ERR_EID;
+        TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
+
+        TO_AppData.EventTbl[  ind].EventID = TO_PUT_POOL_ERR_EID;
+        TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
+
+        TO_AppData.EventTbl[  ind].EventID = TO_PIPE_READ_ERR_EID;
+        TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
+
+        TO_AppData.EventTbl[  ind].EventID = TO_TLM_MSG_LEN_ERR_EID;
+        TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_4_STOP;
+
+        TO_AppData.EventTbl[  ind].EventID = TO_MF_MSG_ID_ERR_EID;
+        TO_AppData.EventTbl[ind++].Mask    = CFE_EVS_FIRST_ONE_STOP;
     }
 
-    return (iStatus);
+    customStatus = TO_Custom_InitEvent(&ind);
+
+    if(TO_CUSTOM_INITEVENT_BAD_IND_ERR == customStatus)
+    {
+        (void) CFE_ES_WriteToSysLog("TO - Custom Init Event error: event table index out of range. Custom EID filters not set.");
+    }
+    else if(TO_CUSTOM_INITEVENT_INDEX_OCCUPIED == customStatus)
+    {
+        (void) CFE_ES_WriteToSysLog("TO - Custom Init Event error: event table occupied at starting index. Custom EID filters not set.");
+    }
+    else if(TO_CUSTOM_INITEVENT_TOO_MANY_FILTERS == customStatus)
+    {
+        (void) CFE_ES_WriteToSysLog("TO - Custom Init Event error: Filter limit reached. Some custom EID filters not set.");
+    }
+    else if(CFE_SUCCESS == customStatus)
+    {
+        (void) CFE_ES_WriteToSysLog("TO - Custom Init Event: Successfully set custom EID filters.");
+    }
+    else
+    {
+        (void) CFE_ES_WriteToSysLog("TO - Custom Init Event: Unknown Error.");
+    }
+
+    /* Register the table with CFE */
+    regStatus = CFE_EVS_Register(TO_AppData.EventTbl,
+                                 (uint16)ind, CFE_EVS_BINARY_FILTER);
+    if (regStatus != CFE_SUCCESS)
+    {
+        (void) CFE_ES_WriteToSysLog("TO - Failed to register with EVS (0x%08X)\n", (unsigned int)regStatus);
+    }
+    else
+    {
+        /* If there were custom event init errors, send an EVS message*/
+        switch (customStatus)
+        {
+            case TO_CUSTOM_INITEVENT_BAD_IND_ERR:
+                (void) CFE_EVS_SendEvent(TO_EVT_CUSTOM_FILTERS_ERR_EID,
+                                         CFE_EVS_ERROR,
+                                         "Custom Init Event - Event table index out of range. Custom EID filters not set.");
+                break;
+
+            case TO_CUSTOM_INITEVENT_INDEX_OCCUPIED:
+                (void) CFE_EVS_SendEvent(TO_EVT_CUSTOM_FILTERS_ERR_EID,
+                                         CFE_EVS_ERROR,
+                                         "Custom Init Event - Event table occupied at starting index. Custom EID filters not set.");
+                break;
+
+            case TO_CUSTOM_INITEVENT_TOO_MANY_FILTERS:
+                (void) CFE_EVS_SendEvent(TO_EVT_CUSTOM_FILTERS_ERR_EID,
+                                         CFE_EVS_ERROR,
+                                         "Custom Init Event - Filter limit reached. Some custom EID filters not set.");
+                break;
+
+            case CFE_SUCCESS:
+                break;
+
+            default:
+                (void) CFE_EVS_SendEvent(TO_EVT_CUSTOM_FILTERS_ERR_EID,
+                                         CFE_EVS_ERROR,
+                                         "Custom Init Event - Unknown error.");
+                break;
+        }
+    }
+    return (regStatus);
 }
 
 
@@ -147,73 +213,72 @@ int32 TO_InitEvent()
 /* Initialize Message Pipes                                        */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-int32 TO_InitPipe()
+int32 TO_InitPipe(void)
 {
-    int32  iStatus=CFE_SUCCESS;
+    int32 status = CFE_SUCCESS;
 
     /* Init schedule pipe and subscribe to wakeup messages */
-    iStatus = CFE_SB_CreatePipe(&TO_AppData.SchPipeId,
+    status = CFE_SB_CreatePipe(&TO_AppData.SchPipeId,
                                  TO_SCH_PIPE_DEPTH,
                                  TO_SCH_PIPE_NAME);
-    if (iStatus == CFE_SUCCESS)
+    if (status == CFE_SUCCESS)
     {
-        iStatus = CFE_SB_SubscribeEx(TO_SEND_TLM_MID, TO_AppData.SchPipeId, CFE_SB_Default_Qos, TO_SCH_PIPE_WAKEUP_RESERVED);
-
-        if (iStatus != CFE_SUCCESS)
+        status = CFE_SB_SubscribeEx(TO_SEND_TLM_MID, TO_AppData.SchPipeId, CFE_SB_Default_Qos, TO_SCH_PIPE_WAKEUP_RESERVED);
+        if (status != CFE_SUCCESS)
         {
-            (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+            (void) CFE_EVS_SendEvent(TO_SUBSCRIBE_ERR_EID,
+                                     CFE_EVS_ERROR,
                                      "Sch Pipe failed to subscribe to TO_SEND_TLM_MID. (0x%08X)",
-                                     (unsigned int)iStatus);
+                                     (unsigned int)status);
             goto TO_InitPipe_Exit_Tag;
         }
 
-        iStatus = CFE_SB_SubscribeEx(TO_SEND_HK_MID, TO_AppData.SchPipeId, CFE_SB_Default_Qos, TO_SCH_PIPE_SEND_HK_RESERVED);
-
-        if (iStatus != CFE_SUCCESS)
+        status = CFE_SB_SubscribeEx(TO_SEND_HK_MID, TO_AppData.SchPipeId, CFE_SB_Default_Qos, TO_SCH_PIPE_SEND_HK_RESERVED);
+        if (status != CFE_SUCCESS)
         {
-            (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-                                     "CMD Pipe failed to subscribe to TO_SEND_HK_MID. (0x%08X)",
-                                     (unsigned int)iStatus);
+            (void) CFE_EVS_SendEvent(TO_SUBSCRIBE_ERR_EID,
+                                     CFE_EVS_ERROR,
+                                     "Sch Pipe failed to subscribe to TO_SEND_HK_MID. (0x%08X)",
+                                     (unsigned int)status);
             goto TO_InitPipe_Exit_Tag;
         }
 
     }
     else
     {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+        (void) CFE_EVS_SendEvent(TO_INIT_SCHPIPE_ERR_EID,
+                                 CFE_EVS_ERROR,
                                  "Failed to create SCH pipe (0x%08X)",
-                                 (unsigned int)iStatus);
-        goto TO_InitPipe_Exit_Tag;
+                                 (unsigned int)status);
+            goto TO_InitPipe_Exit_Tag;
     }
 
     /* Init command pipe and subscribe to command messages */
-    iStatus = CFE_SB_CreatePipe(&TO_AppData.CmdPipeId,
+    status = CFE_SB_CreatePipe(&TO_AppData.CmdPipeId,
                                  TO_CMD_PIPE_DEPTH,
                                  TO_CMD_PIPE_NAME);
-    if (iStatus == CFE_SUCCESS)
+    if (status == CFE_SUCCESS)
     {
         /* Subscribe to command messages */
-        iStatus = CFE_SB_Subscribe(TO_CMD_MID, TO_AppData.CmdPipeId);
-
-        if (iStatus != CFE_SUCCESS)
+        status = CFE_SB_Subscribe(TO_CMD_MID, TO_AppData.CmdPipeId);
+        if (status != CFE_SUCCESS)
         {
-            (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+            (void) CFE_EVS_SendEvent(TO_SUBSCRIBE_ERR_EID,
+                                     CFE_EVS_ERROR,
                                      "CMD Pipe failed to subscribe to TO_CMD_MID. (0x%08X)",
-                                     (unsigned int)iStatus);
-            goto TO_InitPipe_Exit_Tag;
+                                     (unsigned int)status);
         }
     }
     else
     {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+        (void) CFE_EVS_SendEvent(TO_INIT_CMDPIPE_ERR_EID,
+                                 CFE_EVS_ERROR,
                                  "Failed to create CMD pipe (0x%08X)",
-                                 (unsigned int)iStatus);
-        goto TO_InitPipe_Exit_Tag;
+                                 (unsigned int)status);
     }
 
 TO_InitPipe_Exit_Tag:
-    return (iStatus);
+    return (status);
 }
     
 
@@ -222,107 +287,110 @@ TO_InitPipe_Exit_Tag:
 /* Initialize Global Variables                                     */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-void TO_InitData()
+int32 TO_InitData(void)
 {
-    /* Init input data */
-    memset((void*)&TO_AppData.InData, 0x00, sizeof(TO_AppData.InData));
-
-    /* Init data types message */
-    //CFE_SB_InitMsg(&TO_AppData.OutData,
-    //		TO_DATA_TYPE_MID, sizeof(TO_AppData.OutData), TRUE);
+    int32 status = CFE_SUCCESS;
 
     /* Init housekeeping packet */
     CFE_SB_InitMsg(&TO_AppData.HkTlm,
                    TO_HK_TLM_MID, sizeof(TO_AppData.HkTlm), TRUE);
 
-	OS_MutSemCreate(&TO_AppData.MutexID, "TO_APP", 0);
+    status = OS_MutSemCreate(&TO_AppData.MutexID, "TO_APP", 0);
+    if (status != OS_SUCCESS)
+    {
+        CFE_EVS_SendEvent(TO_CREATE_APPDATA_MUTEX_ERR_EID,
+                CFE_EVS_ERROR,
+                "Init Data: Failed to create TO_AppData mutex: 0x%08lX",
+                (unsigned long)status);
 
-    TO_AppData.HkTlm.MaxMem = TO_NUM_BYTES_IN_MEM_POOL;
+        return status;
+    }
+
+    TO_AppData.HkTlm.ChannelMaxMem = TO_NUM_BYTES_IN_MEM_POOL;
+    
+    return CFE_SUCCESS;
 }
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
-/* TO initialization                                              */
+/* TO initialization                                               */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-int32 TO_InitApp()
+int32 TO_InitApp(void)
 {
-    int32  iStatus   = CFE_SUCCESS;
-    int8   hasEvents = 0;
+    int32     status   = CFE_SUCCESS;
+    osalbool  hasEvents = FALSE;
 
-    iStatus = TO_InitEvent();
-    if (iStatus != CFE_SUCCESS)
+    status = TO_InitEvent();
+    if (status != CFE_SUCCESS)
     {
-        (void) CFE_ES_WriteToSysLog("TO - Failed to init events (0x%08X)\n", (unsigned int)iStatus);
+        (void) CFE_ES_WriteToSysLog("TO - Failed to init events (0x%08X)\n", (unsigned int)status);
         goto TO_InitApp_Exit_Tag;
     }
     else
     {
-        hasEvents = 1;
+        hasEvents = TRUE;
     }
 
-    iStatus = TO_InitPipe();
-    if (iStatus != CFE_SUCCESS)
+    status = TO_InitPipe();
+    if (status != CFE_SUCCESS)
     {
-        (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
+        (void) CFE_EVS_SendEvent(TO_INIT_PIPE_ERR_EID,
+                                 CFE_EVS_ERROR,
                                  "Failed to init pipes (0x%08X)",
-                                 (unsigned int)iStatus);
+                                 (unsigned int)status);
         goto TO_InitApp_Exit_Tag;
     }
 
-    TO_InitData();
-
-    /* Initialize the memory pool for the priority queues and output channel
-     * queues.
-     */
-    iStatus = CFE_ES_PoolCreateEx(&TO_AppData.HkTlm.MemPoolHandle,
-    		      TO_AppData.MemPoolBuffer,
-				  TO_NUM_BYTES_IN_MEM_POOL,
-				  TO_MAX_MEMPOOL_BLK_SIZES,
-                  &TO_MemPoolDefSize[0],
-                  CFE_ES_USE_MUTEX);
-    if (iStatus != CFE_SUCCESS)
+    status = TO_InitData();
+    if (status != CFE_SUCCESS)
     {
-    	(void) CFE_EVS_SendEvent(TO_CR_POOL_ERR_EID, CFE_EVS_ERROR,
-        		"Error creating memory pool (0x%08X)",(unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
+        /* An error has already been sent in TO_InitData function */
+        return status;
     }
 
-    iStatus = TO_Channel_InitAll();
-    if (iStatus != CFE_SUCCESS)
-    {
-    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-        		"Error initializing channels (0x%08X)",(unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
-    }
+    TO_Channel_InitAll();
 
-    iStatus = TO_Custom_Init();
-    if (iStatus != CFE_SUCCESS)
+    status = TO_Custom_Init();
+    if (status != CFE_SUCCESS)
     {
-    	(void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR,
-            "Failed to init custom layer (0x%08X)",
-            (unsigned int)iStatus);
-        goto TO_InitApp_Exit_Tag;
+        (void) CFE_EVS_SendEvent(TO_INIT_APP_ERR_EID,
+                                 CFE_EVS_ERROR,
+                                "Failed to init custom layer (0x%08X)",
+            (unsigned int)status);
     }
 
 TO_InitApp_Exit_Tag:
-    if (iStatus == CFE_SUCCESS)
+    return TO_InitAppResult(status, hasEvents);
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* TO initialization result                                        */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int32 TO_InitAppResult(int32 status, osalbool events)
+{
+    if (CFE_SUCCESS == status)
     {
-        (void) CFE_EVS_SendEvent(TO_INIT_INF_EID, CFE_EVS_INFORMATION,
+        (void) CFE_EVS_SendEvent(TO_INIT_APP_INF_EID,
+                                 CFE_EVS_INFORMATION,
                                  "Initialized.  Version %d.%d.%d.%d",
                                  TO_MAJOR_VERSION,
                                  TO_MINOR_VERSION,
                                  TO_REVISION,
                                  TO_MISSION_REV);
+        TO_PrintCustomVersion();
     }
     else
     {
-        if (hasEvents == 1)
+        if (TRUE == events)
         {
-            (void) CFE_EVS_SendEvent(TO_INIT_ERR_EID, CFE_EVS_ERROR, "Application failed to initialize");
+            (void) CFE_EVS_SendEvent(TO_INIT_APP_ERR_EID,
+                                     CFE_EVS_ERROR, 
+                                     "Application failed to initialize");
         }
         else
         {
@@ -330,17 +398,16 @@ TO_InitApp_Exit_Tag:
         }
     }
 
-    return (iStatus);
+    return (status);
 }
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
-/* TO Cleanup                                                     */
+/* TO Cleanup                                                      */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-void TO_Cleanup()
+void TO_Cleanup(void)
 {
     TO_Channel_CleanupAll();
     OS_MutSemDelete(TO_AppData.MutexID);
@@ -352,48 +419,23 @@ void TO_Cleanup()
 /* Receive and Process Messages                                    */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-int32 TO_RcvMsg(int32 iBlocking)
+int32 TO_RcvMsg(int32 blocking)
 {
-    int32           iStatus=CFE_SUCCESS;
-    CFE_SB_Msg_t*   MsgPtr=NULL;
+    int32           status=CFE_SUCCESS;
+    CFE_SB_Msg_t   *msgPtr=NULL;
     CFE_SB_MsgId_t  MsgId;
 
-    /* Stop Performance Log entry */
-//	TO_ChannelData_t *channel = &TO_AppData.ChannelData[0];
-//	iStatus = OS_QueueDelete(
-//			channel->OutputQueue.OSALQueueID);
-//	if (iStatus != OS_SUCCESS)
-//	{
-//		(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-//								 "Failed to delete '%s' output channel queue. err=%i",
-//								 channel->ChannelName, (unsigned int)iStatus);
-//	}
     CFE_ES_PerfLogExit(TO_MAIN_TASK_PERF_ID);
 
-	TO_ReleaseAllTables();
-
     /* Wait for WakeUp messages from scheduler */
-    iStatus = CFE_SB_RcvMsg(&MsgPtr, TO_AppData.SchPipeId, iBlocking);
-
-//	channel = &TO_AppData.ChannelData[1];
-//	iStatus = OS_QueueDelete(
-//			channel->OutputQueue.OSALQueueID);
-//	if (iStatus != OS_SUCCESS)
-//	{
-//		(void) CFE_EVS_SendEvent(TO_CONFIG_TABLE_ERR_EID, CFE_EVS_ERROR,
-//								 "Failed to delete '%s' output channel queue. err=%i",
-//								 channel->ChannelName, (unsigned int)iStatus);
-//	}
+    status = CFE_SB_RcvMsg(&msgPtr, TO_AppData.SchPipeId, blocking);
 
     /* Start Performance Log entry */
     CFE_ES_PerfLogEntry(TO_MAIN_TASK_PERF_ID);
 
-	TO_AcquireAllTables();
-
-    if (iStatus == CFE_SUCCESS)
+    if (CFE_SUCCESS == status)
     {
-        MsgId = CFE_SB_GetMsgId(MsgPtr);
+        MsgId = CFE_SB_GetMsgId(msgPtr);
         switch (MsgId)
         {
             case TO_SEND_TLM_MID:
@@ -405,39 +447,40 @@ int32 TO_RcvMsg(int32 iBlocking)
                 TO_ReportHousekeeping();
                 break;
 
-            default:
-                (void) CFE_EVS_SendEvent(TO_MSGID_ERR_EID, CFE_EVS_ERROR,
-                                  "Recvd invalid SCH msgId (0x%04X)", (unsigned short)MsgId);
+        default:
+            (void) CFE_EVS_SendEvent(TO_MSG_ID_ERR_EID,
+                                     CFE_EVS_ERROR,
+                                     "Recvd invalid SCH msgId (0x%04X)", (unsigned short)MsgId);
         }
     }
-    else if (iStatus == CFE_SB_NO_MESSAGE)
+    else if (CFE_SB_NO_MESSAGE == status)
     {
-        /* TODO: If there's no incoming message, you can do something here, or
-         * nothing.  Note, this section is dead code only if the iBlocking arg
+        /* If there's no incoming message, you can do something here, or
+         * nothing.  Note, this section is dead code only if the blocking arg
          * is CFE_SB_PEND_FOREVER. */
-        iStatus = CFE_SUCCESS;
+        status = CFE_SUCCESS;
     }
-    else if (iStatus == CFE_SB_TIME_OUT)
+    else if (CFE_SB_TIME_OUT == status)
     {
-        /* TODO: If there's no incoming message within a specified time (via the
-         * iBlocking arg, you can do something here, or nothing.
-         * Note, this section is dead code only if the iBlocking arg
+        /* If there's no incoming message within a specified time (via the
+         * blocking arg, you can do something here, or nothing.
+         * Note, this section is dead code only if the blocking arg
          * is CFE_SB_PEND_FOREVER. */
-        iStatus = CFE_SUCCESS;
+        status = CFE_SUCCESS;
     }
     else
     {
-        /* TODO: This is an example of exiting on an error (either CFE_SB_BAD_ARGUMENT, or
-         * CFE_SB_PIPE_RD_ERROR).
-         */
-        (void) CFE_EVS_SendEvent(TO_PIPE_ERR_EID, CFE_EVS_ERROR,
-			  "SB pipe read error (0x%08X), app will exit", (unsigned int)iStatus);
-        TO_AppData.uiRunStatus= CFE_ES_APP_ERROR;
+        (void) CFE_EVS_SendEvent(TO_PIPE_READ_ERR_EID,
+                                 CFE_EVS_ERROR,
+                                "SB pipe read error (0x%08X)", 
+                                (unsigned int)status);
     }
 
-    return (iStatus);
+    TO_ManageAllAppTables();
+
+    return (status);
 }
-    
+
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -445,54 +488,47 @@ int32 TO_RcvMsg(int32 iBlocking)
 /* Process Incoming Commands                                       */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-void TO_ProcessNewCmds()
+void TO_ProcessNewCmds(void)
 {
-    int iStatus = CFE_SUCCESS;
-    CFE_SB_Msg_t*   CmdMsgPtr=NULL;
-    CFE_SB_MsgId_t  CmdMsgId;
+    int32 status = CFE_SUCCESS;
+    CFE_SB_Msg_t   *cmdMsgPtr=NULL;
+    CFE_SB_MsgId_t  cmdMsgId;
+    uint32 i;
 
     /* Process command messages till the pipe is empty */
-    while (1)
+    for (i = 0; i < TO_CMD_PIPE_DEPTH; ++i)
     {
-        iStatus = CFE_SB_RcvMsg(&CmdMsgPtr, TO_AppData.CmdPipeId, CFE_SB_POLL);
-        if(iStatus == CFE_SUCCESS)
+        status = CFE_SB_RcvMsg(&cmdMsgPtr, TO_AppData.CmdPipeId, CFE_SB_POLL);
+        if (status == CFE_SUCCESS)
         {
-            CmdMsgId = CFE_SB_GetMsgId(CmdMsgPtr);
-            switch (CmdMsgId)
+            cmdMsgId = CFE_SB_GetMsgId(cmdMsgPtr);
+            switch (cmdMsgId)
             {
                 case TO_CMD_MID:
-                    TO_ProcessNewAppCmds(CmdMsgPtr);
+                    TO_ProcessNewAppCmds(cmdMsgPtr);
                     break;
-
-                /* TODO:  Add code to process other subscribed commands here
-                **
-                ** Example:
-                **     case CFE_TIME_DATA_CMD_MID:
-                **         TO_ProcessTimeDataCmd(CmdMsgPtr);
-                **         break;
-                */
 
                 default:
                     /* Bump the command error counter for an unknown command.
                      * (This should only occur if it was subscribed to with this
                      *  pipe, but not handled in this switch-case.) */
                     TO_AppData.HkTlm.usCmdErrCnt++;
-                    (void) CFE_EVS_SendEvent(TO_MSGID_ERR_EID, CFE_EVS_ERROR,
-                                      "Recvd invalid CMD msgId (0x%04X)", (unsigned short)CmdMsgId);
+                    (void) CFE_EVS_SendEvent(TO_MSG_ID_ERR_EID,
+                                             CFE_EVS_ERROR,
+                                             "Recvd invalid CMD msgId (0x%04X)",
+                                             (unsigned short)cmdMsgId);
                     break;
             }
         }
-        else if (iStatus == CFE_SB_NO_MESSAGE)
+        else if (CFE_SB_NO_MESSAGE == status)
         {
             break;
         }
         else
         {
-            (void) CFE_EVS_SendEvent(TO_PIPE_ERR_EID, CFE_EVS_ERROR,
-                  "CMD pipe read error (0x%08X)", (unsigned int)iStatus);
-            TO_AppData.uiRunStatus = CFE_ES_APP_ERROR;
-            break;
+            (void) CFE_EVS_SendEvent(TO_PIPE_READ_ERR_EID,
+                                     CFE_EVS_ERROR,
+                                     "CMD pipe read error (0x%08X)", (unsigned int)status);
         }
     }
 }
@@ -500,394 +536,560 @@ void TO_ProcessNewCmds()
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
-/* Process TO Commands                                            */
+/* Process TO Commands                                             */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-void TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr)
+void TO_ProcessNewAppCmds(CFE_SB_Msg_t *msgPtr)
 {
-    uint32  uiCmdCode=0;
+    uint32  cmdCode = 0;
+    osalbool sizeOk   = FALSE;
+    osalbool isCmdOk  = FALSE;
 
-    if (MsgPtr != NULL)
+    if (msgPtr != NULL)
     {
-        uiCmdCode = CFE_SB_GetCmdCode(MsgPtr);
-        switch (uiCmdCode)
+        cmdCode = CFE_SB_GetCmdCode(msgPtr);
+        switch (cmdCode)
         {
             case TO_NOOP_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
-            	{
-                	OS_MutSemTake(TO_AppData.MutexID);
-					TO_AppData.HkTlm.usCmdCnt++;
-					(void) CFE_EVS_SendEvent(TO_CMD_NOOP_EID, CFE_EVS_INFORMATION,
-									  "Executed NOOP cmd (%u), Version %d.%d.%d.%d",
-									  (unsigned int)uiCmdCode,
-									  TO_MAJOR_VERSION,
-									  TO_MINOR_VERSION,
-									  TO_REVISION,
-									  TO_MISSION_REV);
-                	OS_MutSemGive(TO_AppData.MutexID);
-            	}
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_NoArgCmd_t));
+
+                if (TRUE == sizeOk)
+                {
+                    (void) OS_MutSemTake(TO_AppData.MutexID);
+                    TO_AppData.HkTlm.usCmdCnt++;
+                    (void) OS_MutSemGive(TO_AppData.MutexID);
+                    (void) CFE_EVS_SendEvent(TO_CMD_NOOP_INF_EID, CFE_EVS_INFORMATION,
+                                      "Executed NOOP cmd (%u), Version %d.%d.%d.%d",
+                                      (unsigned int)cmdCode,
+                                      TO_MAJOR_VERSION,
+                                      TO_MINOR_VERSION,
+                                      TO_REVISION,
+                                      TO_MISSION_REV);
+                    TO_PrintCustomVersion();
+                }
                 break;
+            }
 
             case TO_RESET_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_NoArgCmd_t)))
-            	{
-                	OS_MutSemTake(TO_AppData.MutexID);
-					TO_AppData.HkTlm.usCmdCnt = 0;
-					TO_AppData.HkTlm.usCmdErrCnt = 0;
-					TO_AppData.HkTlm.usTotalMsgDropped = 0;
-					TO_AppData.HkTlm.PeakMemInUse = 0;
-                	OS_MutSemGive(TO_AppData.MutexID);
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_NoArgCmd_t));
 
-					TO_Channel_ResetCountsAll();
+                if (TRUE == sizeOk)
+                {
+                    (void) OS_MutSemTake(TO_AppData.MutexID);
+                    TO_AppData.HkTlm.usCmdCnt = 0;
+                    TO_AppData.HkTlm.usCmdErrCnt = 0;
+                    TO_AppData.HkTlm.usTotalMsgDropped = 0;
+                    TO_AppData.HkTlm.SentBytes = 0;
+                    (void) OS_MutSemGive(TO_AppData.MutexID);
 
-					(void) CFE_EVS_SendEvent(TO_CMD_RESET_EID, CFE_EVS_INFORMATION,
-									  "Executed RESET cmd (%u)", (unsigned int)uiCmdCode);
-            	}
+                    TO_Channel_ResetCountsAll();
+
+                    (void) CFE_EVS_SendEvent(TO_CMD_RESET_INF_EID, CFE_EVS_INFORMATION,
+                                      "Executed RESET cmd (%u)", (unsigned int)cmdCode);
+                }
                 break;
+            }
 
             case TO_ADD_MESSAGE_FLOW_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_AddMessageFlowCmd_t)))
-            	{
-            		TO_AddMessageFlowCmd_t *cmd = (TO_AddMessageFlowCmd_t*)MsgPtr;
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_AddMessageFlowCmd_t));
 
-            		if(TO_MessageFlow_Add(cmd->ChannelIdx, cmd->MsgID, cmd->MsgLimit, cmd->PQueueIdx) == FALSE)
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            		else
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-    					(void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID, CFE_EVS_INFORMATION,
-    									  "Executed ADD_MESSAGE cmd (%u)", (unsigned int)uiCmdCode);
-            		}
-            	}
-            	break;
+                if (TRUE == sizeOk)
+                {
+                    TO_AddMessageFlowCmd_t *cmd = (TO_AddMessageFlowCmd_t*)msgPtr;
+
+                    isCmdOk = TO_MessageFlow_Add(cmd->ChannelIdx, cmd->MsgID, cmd->MsgLimit, cmd->PQueueIdx);
+
+                    if (FALSE == isCmdOk)
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdErrCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                    else
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                        (void) CFE_EVS_SendEvent(TO_CMD_ADD_MSG_FLOW_EID,
+                                                 CFE_EVS_INFORMATION,
+                                                 "Executed ADD_MESSAGE cmd (%u) on channel %d", (unsigned int)cmdCode,
+                                                 cmd->ChannelIdx);
+                    }
+                }
+                break;
+            }
 
             case TO_REMOVE_MESSAGE_FLOW_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_RemoveMessageFlowCmd_t)))
-            	{
-            		TO_RemoveMessageFlowCmd_t *cmd = (TO_RemoveMessageFlowCmd_t*)MsgPtr;
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_RemoveMessageFlowCmd_t));
 
-            		if(TO_MessageFlow_Remove(cmd->ChannelIdx, cmd->MsgID) == FALSE)
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            		else
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-    					(void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID, CFE_EVS_INFORMATION,
-    									  "Executed ADD_REMOVE cmd (%u)", (unsigned int)uiCmdCode);
-            		}
-            	}
-            	break;
+                if (TRUE == sizeOk)
+                {
+                    TO_RemoveMessageFlowCmd_t *cmd = (TO_RemoveMessageFlowCmd_t*)msgPtr;
+
+                    isCmdOk = TO_MessageFlow_Remove(cmd->ChannelIdx, cmd->MsgID);
+
+                    if (FALSE == isCmdOk)
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdErrCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                    else
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                        (void) CFE_EVS_SendEvent(TO_CMD_REMOVE_MSG_FLOW_EID,
+                                                 CFE_EVS_INFORMATION,
+                                                 "Executed remove message flow cmd (%u) on channel %d", (unsigned int)cmdCode,
+                                                 cmd->ChannelIdx);
+                    }
+                }
+                break;
+            }
 
             case TO_QUERY_MESSAGE_FLOW_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryMessageFlowCmd_t)))
-            	{
-            		TO_QueryMessageFlowCmd_t *cmd = (TO_QueryMessageFlowCmd_t*)MsgPtr;
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_QueryMessageFlowCmd_t));
 
-            		if(TO_MessageFlow_Query(cmd->ChannelIdx, cmd->MsgID) == FALSE)
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            		else
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            	}
-            	break;
+                if (TRUE == sizeOk)
+                {
+                    TO_QueryMessageFlowCmd_t *cmd = (TO_QueryMessageFlowCmd_t*)msgPtr;
+
+                    isCmdOk = TO_MessageFlow_Query(cmd->ChannelIdx, cmd->MsgID);
+
+                    if (FALSE == isCmdOk)
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdErrCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                    else
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                }
+                break;
+            }
 
             case TO_QUERY_PRIORITY_QUEUE_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryPriorityQueueCmd_t)))
-            	{
-            		TO_QueryPriorityQueueCmd_t *cmd = (TO_QueryPriorityQueueCmd_t*)MsgPtr;
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_QueryPriorityQueueCmd_t));
 
-            		if(TO_PriorityQueue_Query(cmd->ChannelIdx, cmd->PQueueIndex) == FALSE)
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            		else
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            	}
-            	break;
+                if (TRUE == sizeOk)
+                {
+                    TO_QueryPriorityQueueCmd_t *cmd = (TO_QueryPriorityQueueCmd_t*)msgPtr;
+
+                    isCmdOk = TO_PriorityQueue_Query(cmd->ChannelIdx, cmd->PQueueIndex);
+
+                    if (FALSE == isCmdOk)
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdErrCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                    else
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                }
+                break;
+            }
 
             case TO_QUERY_OUTPUT_CHANNEL_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_QueryOutputChannelCmd_t)))
-            	{
-            		TO_QueryOutputChannelCmd_t *cmd = (TO_QueryOutputChannelCmd_t*)MsgPtr;
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_QueryOutputChannelCmd_t));
 
-            		if(TO_OutputChannel_Query(cmd->ChannelIdx) == FALSE)
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            		else
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            	}
-            	break;
+                if (TRUE == sizeOk)
+                {
+                    TO_QueryOutputChannelCmd_t *cmd = (TO_QueryOutputChannelCmd_t*)msgPtr;
+
+                    isCmdOk = TO_OutputChannel_Query(cmd->ChannelIdx);
+
+                    if (FALSE == isCmdOk)
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdErrCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                    else
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                }
+                break;
+            }
 
             case TO_SEND_DIAG_CC:
-            	if(TO_VerifyCmdLength(MsgPtr, sizeof(TO_SendDiagCmd_t)))
-            	{
-            		TO_SendDiagCmd_t *cmd = (TO_SendDiagCmd_t*)MsgPtr;
+            {
+                sizeOk = TO_VerifyCmdLength(msgPtr, sizeof(TO_SendDiagCmd_t));
 
-            		if(TO_SendDiag(cmd->ChannelIdx) == FALSE)
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdErrCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            		else
-            		{
-                    	OS_MutSemTake(TO_AppData.MutexID);
-            			TO_AppData.HkTlm.usCmdCnt++;
-                    	OS_MutSemGive(TO_AppData.MutexID);
-            		}
-            	}
-            	break;
+                if (TRUE == sizeOk)
+                {
+                    TO_SendDiagCmd_t *cmd = (TO_SendDiagCmd_t*)msgPtr;
+
+                    isCmdOk = TO_SendDiag(cmd->ChannelIdx);
+
+                    if (FALSE == isCmdOk)
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdErrCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                    }
+                    else
+                    {
+                        (void) OS_MutSemTake(TO_AppData.MutexID);
+                        TO_AppData.HkTlm.usCmdCnt++;
+                        (void) OS_MutSemGive(TO_AppData.MutexID);
+                        (void) CFE_EVS_SendEvent(TO_CMD_SEND_DIAG_EID, CFE_EVS_INFORMATION,
+                                          "Successfully executed send diagnostics (%u) on channel %d", (unsigned int)cmdCode,
+                                          cmd->ChannelIdx);
+                    }
+                }
+                break;
+            }
 
             default:
-            	TO_OutputChannel_ProcessNewCustomCmds(MsgPtr);
+            {
+                TO_OutputChannel_ProcessNewCustomCmds(msgPtr);
                 break;
+            }
         }
     }
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
-/* Send TO Housekeeping                                           */
+/* Send TO Housekeeping                                            */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-void TO_ReportHousekeeping()
+void TO_ReportHousekeeping(void)
 {
-	uint32 i = 0;
-	int32 iStatus;
+    uint32 i;
+    TO_ChannelData_t *channel = NULL;
 
-	for(i = 0; i < TO_MAX_CHANNELS; ++i)
-	{
-		TO_ChannelData_t *channel = &TO_AppData.ChannelData[i];
-		TO_Channel_LockByRef(channel);
-		TO_AppData.HkTlm.QueuedInOutputChannel[i] = channel->OutputQueue.CurrentlyQueuedCnt;
-		TO_Channel_UnlockByRef(channel);
-	}
+    (void) OS_MutSemTake(TO_AppData.MutexID);
+    TO_AppData.HkTlm.SentBytes = 0;
+    (void) OS_MutSemGive(TO_AppData.MutexID);
+
+    for (i = 0; i < TO_MAX_CHANNELS; ++i)
+    {
+        channel = &TO_AppData.ChannelData[i];
+
+        TO_Channel_LockByRef(channel);
+
+        TO_AppData.HkTlm.QueuedInOutputChannel[i] = channel->OutputQueue.CurrentlyQueuedCnt;
+        
+        TO_AppData.HkTlm.uiSentMsgCountChannel[i] = channel->SentMsgCount;
+        TO_AppData.HkTlm.uiQueuedMsgCountChannel[i] = channel->QueuedMsgCount;
+        TO_AppData.HkTlm.uiDropMsgCountChannel[i] = channel->DropMsgCount;
+        TO_AppData.HkTlm.uiFailedMsgCountChannel[i] = channel->FailedMsgCount;
+        TO_AppData.HkTlm.uiBytesSentChannel[i] = channel->BytesSent;
+        
+        (void) OS_MutSemTake(TO_AppData.MutexID);
+        TO_AppData.HkTlm.SentBytes += channel->OutputQueue.SentBytes;
+        
+        (void) OS_MutSemGive(TO_AppData.MutexID);
+        
+        TO_AppData.HkTlm.ChannelMemInfo[i].MemInUse = channel->MemInUse;
+        TO_AppData.HkTlm.ChannelMemInfo[i].PeakMemInUse = channel->PeakMemInUse;
+        
+        TO_Channel_UnlockByRef(channel);
+    }
 
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
-	OS_MutSemTake(TO_AppData.MutexID);
+    (void) OS_MutSemTake(TO_AppData.MutexID);
     CFE_SB_SendMsg((CFE_SB_Msg_t*)&TO_AppData.HkTlm);
-	OS_MutSemGive(TO_AppData.MutexID);
+    (void) OS_MutSemGive(TO_AppData.MutexID);
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* Send TO Send Diagnostic Message                                 */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-boolean TO_SendDiag(uint16 ChannelIdx)
-{
-	uint32 iMessageFlow = 0;
-	uint32 iPQueue = 0;
-	boolean rc = FALSE;
-	TO_ChannelDiagTlm_t diagMsg;
 
-    TO_ChannelData_t *channel;
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Send TO Diagnostic Message                                      */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+osalbool TO_SendDiag(uint16 ChannelIdx)
+{
+    uint32 messageFlow = 0;
+    uint32 pQueue = 0;
+    uint32 msgFlowPkt = 0;
+
+    TO_ChannelData_t *channel = NULL;
 
     /* First, check if the channel index is valid. */
-    if(ChannelIdx >= TO_MAX_CHANNELS)
+    if (ChannelIdx >= TO_MAX_CHANNELS)
     {
-    	(void) CFE_EVS_SendEvent(TO_CMD_SEND_DIAG_EID, CFE_EVS_ERROR,
-    		"Invalid channel index.");
-    	goto end_of_function;
+        (void) CFE_EVS_SendEvent(TO_CMD_SEND_DIAG_ERR_EID,
+                                 CFE_EVS_ERROR,
+                                "Invalid channel index of %d.", ChannelIdx);
+        return FALSE;
     }
+
     channel = &TO_AppData.ChannelData[ChannelIdx];
 
-    CFE_SB_InitMsg(&diagMsg, TO_DIAG_TLM_MID, sizeof(diagMsg), TRUE);
+    /* Check if channel has been opened */
+    if (channel->State != TO_CHANNEL_OPENED)
+    {
+        (void) CFE_EVS_SendEvent(TO_CMD_SEND_DIAG_ERR_EID,
+                                 CFE_EVS_ERROR,
+                                "Channel %d has not been opened.", ChannelIdx);
+        return FALSE;
+    }
 
-    diagMsg.Index = ChannelIdx;
+    /* This channel's config table pointer may be NULL, so we can't send diag
+     * data for this channel. */
+    if (NULL == channel->ConfigTblPtr)
+    {
+        (void) CFE_EVS_SendEvent(TO_CMD_SEND_MISSING_TBL_ERR_EID,
+                                 CFE_EVS_ERROR,
+                                 "Channel %d table is not available.", 
+                                 (unsigned int)channel->channelIdx);
+        return FALSE;
+    }
+
+    /* Message prep, msg flow diag data is sent out as separate messages from the main diag message */
+    CFE_SB_InitMsg(&diagMsg, TO_DIAG_TLM_MID, sizeof(diagMsg), TRUE);
+    CFE_SB_InitMsg(&msgFlowDiagPkt, TO_DIAG_MSG_FLOW_MID, sizeof(msgFlowDiagPkt), TRUE);
+
+    diagMsg.ChannelIndex = ChannelIdx;
+    msgFlowDiagPkt.ChannelIndex = ChannelIdx;
 
     TO_Channel_LockByRef(channel);
 
-	diagMsg.State = channel->State;
-	strncpy(diagMsg.ConfigTableName, channel->ConfigTableName,
-			sizeof(diagMsg.ConfigTableName));
-	strncpy(diagMsg.ConfigTableFileName, channel->ConfigTableFileName,
-			sizeof(diagMsg.ConfigTableFileName));
-	strncpy(diagMsg.DumpTableName, channel->DumpTableName,
-			sizeof(diagMsg.DumpTableName));
-	strncpy(diagMsg.ChannelName, channel->ChannelName,
-			sizeof(diagMsg.ChannelName));
-	diagMsg.TableID = channel->ConfigTblPtr->TableID;
+    diagMsg.MemPoolHandle = channel->MemPoolHandle;
+    diagMsg.MemFullCount = channel->MemFullCount;
+    diagMsg.State = channel->State;
 
-	for(iMessageFlow = 0; iMessageFlow < TO_MAX_MESSAGE_FLOWS; ++iMessageFlow)
-	{
-		diagMsg.MessageFlow[iMessageFlow].MsgId
-			= channel->ConfigTblPtr->MessageFlow[iMessageFlow].MsgId;
-		diagMsg.MessageFlow[iMessageFlow].MsgLimit
-			= channel->ConfigTblPtr->MessageFlow[iMessageFlow].MsgLimit;
-		diagMsg.MessageFlow[iMessageFlow].PQueueID
-			= channel->ConfigTblPtr->MessageFlow[iMessageFlow].PQueueID;
-		diagMsg.MessageFlow[iMessageFlow].DroppedMsgCnt
-			= channel->DumpTbl.MessageFlow[iMessageFlow].DroppedMsgCnt;
-		diagMsg.MessageFlow[iMessageFlow].QueuedMsgCnt
-			= channel->DumpTbl.MessageFlow[iMessageFlow].QueuedMsgCnt;
-	}
+    strncpy(diagMsg.ConfigTableName, channel->ConfigTableName,
+            sizeof(diagMsg.ConfigTableName));
+    diagMsg.ConfigTableName[CFE_TBL_MAX_NAME_LENGTH - 1] = '\0';
 
-	for(iPQueue = 0; iPQueue < TO_MAX_PRIORITY_QUEUES; ++iPQueue)
-	{
-		diagMsg.PQueue[iPQueue].State
-			= channel->ConfigTblPtr->PriorityQueue[iPQueue].State;
-		diagMsg.PQueue[iPQueue].MsgLimit
-			= channel->ConfigTblPtr->PriorityQueue[iPQueue].MsgLimit;
-		diagMsg.PQueue[iPQueue].QType
-			= channel->ConfigTblPtr->PriorityQueue[iPQueue].QType;
-		diagMsg.PQueue[iPQueue].DroppedMsgCnt
-			= channel->DumpTbl.PriorityQueue[iPQueue].DroppedMsgCnt;
-		diagMsg.PQueue[iPQueue].QueuedMsgCnt
-			= channel->DumpTbl.PriorityQueue[iPQueue].QueuedMsgCnt;
-		diagMsg.PQueue[iPQueue].CurrentlyQueuedCnt
-			= channel->DumpTbl.PriorityQueue[iPQueue].CurrentlyQueuedCnt;
-		diagMsg.PQueue[iPQueue].HighwaterMark
-			= channel->DumpTbl.PriorityQueue[iPQueue].HighwaterMark;
-	}
+    strncpy(diagMsg.ConfigTableFileName, channel->ConfigTableFileName,
+            sizeof(diagMsg.ConfigTableFileName));
+    diagMsg.ConfigTableFileName[OS_MAX_PATH_LEN - 1] = '\0';
+     
+    strncpy(diagMsg.DumpTableName, channel->DumpTableName,
+            sizeof(diagMsg.DumpTableName));
+    diagMsg.DumpTableName[CFE_TBL_MAX_NAME_LENGTH - 1] = '\0';
+       
+    strncpy(diagMsg.ChannelName, channel->ChannelName,
+            sizeof(diagMsg.ChannelName));
+    diagMsg.ChannelName[OS_MAX_API_NAME - 1] = '\0';     
 
-	diagMsg.OQueue.SentCount
-		= channel->OutputQueue.SentCount;
-	diagMsg.OQueue.CurrentlyQueuedCnt
-		= channel->OutputQueue.CurrentlyQueuedCnt;
-	diagMsg.OQueue.HighwaterMark
-		= channel->OutputQueue.HighwaterMark;
+    diagMsg.TableID = channel->ConfigTblPtr->TableID;
 
-	TO_Channel_UnlockByRef(channel);
+    for (messageFlow = 0; messageFlow < TO_MAX_MESSAGE_FLOWS; ++messageFlow)
+    {
+        /* Circle packet index from 0 -> TO_MSG_FLOW_PKT_LIMIT*/
+        msgFlowPkt = messageFlow % TO_MSG_FLOW_PKT_LIMIT;
+
+        /* If first in packet, set offset of message flow in the table*/
+        if (msgFlowPkt == 0)
+        {
+            msgFlowDiagPkt.Offset = messageFlow;
+        }
+
+        /* Fill message flow diagnostics until defined number of flows is met*/
+        msgFlowDiagPkt.MessageFlow[msgFlowPkt].MsgId
+            = channel->ConfigTblPtr->MessageFlow[messageFlow].MsgId;
+        msgFlowDiagPkt.MessageFlow[msgFlowPkt].MsgLimit
+            = channel->ConfigTblPtr->MessageFlow[messageFlow].MsgLimit;
+        msgFlowDiagPkt.MessageFlow[msgFlowPkt].PQueueID
+            = channel->ConfigTblPtr->MessageFlow[messageFlow].PQueueID;
+        msgFlowDiagPkt.MessageFlow[msgFlowPkt].DroppedMsgCnt
+            = channel->DumpTbl.MessageFlow[messageFlow].DroppedMsgCnt;
+        msgFlowDiagPkt.MessageFlow[msgFlowPkt].QueuedMsgCnt
+            = channel->DumpTbl.MessageFlow[messageFlow].QueuedMsgCnt;
+
+        /* If full send out as message.*/
+        if (msgFlowPkt == TO_MSG_FLOW_PKT_LIMIT-1)
+        {
+            CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&msgFlowDiagPkt);
+            CFE_SB_SendMsg((CFE_SB_Msg_t*)&msgFlowDiagPkt);
+
+#ifdef TO_DEBUG_MODE
+            OS_printf("TO: DIAG diagMsg.MessageFlow: ChannelID: %u Offset: %lu\n", msgFlowDiagPkt.ChannelIndex, msgFlowDiagPkt.Offset);
+            OS_printf("TO: DIAG MsgId, MsgLimit, PQueueID, DroppedCnt, QueuedCnt, FailedCnt, SentCnt\n");
+            for (uint32 i = 0; i <= msgFlowPkt; ++i)
+            {
+                OS_printf("TO: DIAG %d: %0xX, %u, %u, %u, %u\n",
+                   (int)i,
+                    msgFlowDiagPkt.MessageFlow[i].MsgId,
+                    msgFlowDiagPkt.MessageFlow[i].MsgLimit,
+                    msgFlowDiagPkt.MessageFlow[i].PQueueID,
+                    msgFlowDiagPkt.MessageFlow[i].DroppedMsgCnt,
+                    msgFlowDiagPkt.MessageFlow[i].QueuedMsgCnt);
+            }
+#endif
+            /*Reset struct, should zero out data*/
+            CFE_SB_InitMsg(&msgFlowDiagPkt, TO_DIAG_MSG_FLOW_MID, sizeof(msgFlowDiagPkt), TRUE);
+            msgFlowDiagPkt.ChannelIndex = ChannelIdx;
+        }
+    }
+    
+    /* If there is a partial message to send*/
+    if (msgFlowPkt != TO_MSG_FLOW_PKT_LIMIT-1)
+    {
+        /* Send remaining msgFlow data*/
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&msgFlowDiagPkt);
+        CFE_SB_SendMsg((CFE_SB_Msg_t*)&msgFlowDiagPkt);
+
+#ifdef TO_DEBUG_MODE
+        for (uint32 k = 0; k <= msgFlowPkt; ++k)
+        {
+          OS_printf("TO: DIAG %d: %0xX, %u, %u, %u, %lu\n",
+            (int)k,
+            msgFlowDiagPkt.MessageFlow[k].MsgId,
+            msgFlowDiagPkt.MessageFlow[k].MsgLimit,
+            msgFlowDiagPkt.MessageFlow[k].PQueueID,
+            msgFlowDiagPkt.MessageFlow[k].DroppedMsgCnt,
+            msgFlowDiagPkt.MessageFlow[k].QueuedMsgCnt);
+        }
+#endif
+    }
+
+    for (pQueue = 0; pQueue < TO_MAX_PRIORITY_QUEUES; ++pQueue)
+    {
+        diagMsg.PQueue[pQueue].State
+            = channel->ConfigTblPtr->PriorityQueue[pQueue].State;
+        diagMsg.PQueue[pQueue].MsgLimit
+            = channel->ConfigTblPtr->PriorityQueue[pQueue].MsgLimit;
+        diagMsg.PQueue[pQueue].QType
+            = channel->ConfigTblPtr->PriorityQueue[pQueue].QType;
+        diagMsg.PQueue[pQueue].DroppedMsgCnt
+            = channel->DumpTbl.PriorityQueue[pQueue].DroppedMsgCnt;
+        diagMsg.PQueue[pQueue].QueuedMsgCnt
+            = channel->DumpTbl.PriorityQueue[pQueue].QueuedMsgCnt;
+        diagMsg.PQueue[pQueue].CurrentlyQueuedCnt
+            = channel->DumpTbl.PriorityQueue[pQueue].CurrentlyQueuedCnt;
+        diagMsg.PQueue[pQueue].HighwaterMark
+            = channel->DumpTbl.PriorityQueue[pQueue].HighwaterMark;
+    }
+
+    diagMsg.OQueue.SentCount
+        = channel->OutputQueue.SentCount;
+    diagMsg.OQueue.CurrentlyQueuedCnt
+        = channel->OutputQueue.CurrentlyQueuedCnt;
+    diagMsg.OQueue.HighwaterMark
+        = channel->OutputQueue.HighwaterMark;
+    diagMsg.OQueue.SentBytes
+            = channel->OutputQueue.SentBytes;
+
+    TO_Channel_UnlockByRef(channel);
 
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&diagMsg);
     CFE_SB_SendMsg((CFE_SB_Msg_t*)&diagMsg);
 
-    rc = TRUE;
+#ifdef TO_DEBUG_MODE
+    OS_printf("TO: DIAG ChannelIdx = %d\n", (int)diagMsg.ChannelIndex);
+    OS_printf("TO: DIAG State = %d\n", diagMsg.State);
+    OS_printf("TO: DIAG ChannelName = %s\n", diagMsg.ChannelName);
+    OS_printf("TO: DIAG TableID = %lu\n", diagMsg.TableID);
+    OS_printf("TO: DIAG diagMsg.PQueue:\n");
+    OS_printf("TO: DIAG State, MsgLimit, QType, DroppedCnt, QueuedCnt, CurrQCnt, High, PassedCnt\n");
+    for(pQueue = 0; pQueue < TO_MAX_PRIORITY_QUEUES; ++pQueue) {
+        OS_printf("TO: DIAG %d: %d, %d, %d, %lu, %lu, %lu, %lu, %lu, %lu\n", (int)pQueue,
+                  diagMsg.PQueue[pQueue].State,
+                  diagMsg.PQueue[pQueue].MsgLimit,
+                  diagMsg.PQueue[pQueue].QType,
+                  diagMsg.PQueue[pQueue].DroppedMsgCnt,
+                  diagMsg.PQueue[pQueue].QueuedMsgCnt,
+                  diagMsg.PQueue[pQueue].CurrentlyQueuedCnt,
+                  diagMsg.PQueue[pQueue].HighwaterMark);
+    }
+    OS_printf("TO: DIAG OQueue.SentCount = %lu\n", diagMsg.OQueue.SentCount);
+    OS_printf("TO: DIAG OQueue.CurrentlyQueuedCnt = %u\n", diagMsg.OQueue.CurrentlyQueuedCnt);
+    OS_printf("TO: DIAG OQueue.HighwaterMark = %u\n", diagMsg.OQueue.HighwaterMark);
+#endif
 
-end_of_function:
-	return rc;
-
+    return TRUE;
 }
 
-
-    
-/*=====================================================================================
-** Name: TO_VerifyCmdLength
-**
-** Purpose: To verify command length for a particular command message
-**
-** Arguments:
-**    CFE_SB_Msg_t*  MsgPtr      - command message pointer
-**    uint16         usExpLength - expected command length
-**
-** Returns:
-**    boolean bResult - result of verification
-**
-** Routines Called:
-**    TBD
-**
-** Called By:
-**    TO_ProcessNewCmds
-**
-** Global Inputs/Reads:
-**    None
-**
-** Global Outputs/Writes:
-**    TBD
-**
-** Limitations, Assumptions, External Events, and Notes:
-**    1. List assumptions that are made that apply to this function.
-**    2. List the external source(s) and event(s) that can cause this function to execute.
-**    3. List known limitations that apply to this function.
-**    4. If there are no assumptions, external events, or notes then enter NONE.
-**       Do not omit the section.
-**
-** Algorithm:
-**    Psuedo-code or description of basic algorithm
-**=====================================================================================*/
-boolean TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr,
-                           uint16 usExpectedLen)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Verify Command Length                                           */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+osalbool TO_VerifyCmdLength(CFE_SB_Msg_t* msgPtr, uint16 expectedLen)
 {
-    boolean bResult  = TRUE;
-    uint16  usMsgLen = 0;
+    uint16  msgLen = 0;
+    CFE_SB_MsgId_t MsgId = 0;
+    uint16 cmdCode = 0;
 
-    if (MsgPtr != NULL)
+    if (msgPtr != NULL)
     {
-        usMsgLen = CFE_SB_GetTotalMsgLength(MsgPtr);
+        msgLen = CFE_SB_GetTotalMsgLength(msgPtr);
 
-        if (usExpectedLen != usMsgLen)
+        if (expectedLen != msgLen)
         {
-            bResult = FALSE;
-            CFE_SB_MsgId_t MsgId = CFE_SB_GetMsgId(MsgPtr);
-            uint16 usCmdCode = CFE_SB_GetCmdCode(MsgPtr);
+            MsgId = CFE_SB_GetMsgId(msgPtr);
+            cmdCode = CFE_SB_GetCmdCode(msgPtr);
 
-            (void) CFE_EVS_SendEvent(TO_MSGLEN_ERR_EID, CFE_EVS_ERROR,
-                              "Rcvd invalid msgLen: msgId=0x%04X, cmdCode=%d, "
-                              "msgLen=%d, expectedLen=%d",
-                              MsgId, usCmdCode, usMsgLen, usExpectedLen);
+            (void) CFE_EVS_SendEvent(TO_MSG_LEN_ERR_EID,
+                                     CFE_EVS_ERROR,
+                                     "Rcvd invalid msgLen: msgId=0x%04X, cmdCode=%d, "
+                                     "msgLen=%d, expectedLen=%d",
+                                     MsgId, cmdCode, msgLen, expectedLen);
+                              
+            (void) OS_MutSemTake(TO_AppData.MutexID);
             TO_AppData.HkTlm.usCmdErrCnt++;
+            (void) OS_MutSemGive(TO_AppData.MutexID);
+            return FALSE;
         }
     }
+    else
+    {
+        /* msgPtr is NULL */
+        return FALSE;
+    }
 
-    return (bResult);
+    return TRUE;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
-/* TO application entry point and main process loop               */
+/* TO application entry point and main process loop                */
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-void TO_AppMain()
+void TO_AppMain(void)
 {
+    int32 status = CFE_SUCCESS;
+
     /* Clear the AppData structure.  Global data appears to retain its value when an application is
      * restarted.
      */
-    memset(&TO_AppData, 0, sizeof(TO_AppData));
+    (void) CFE_PSP_MemSet(&TO_AppData, 0, sizeof(TO_AppData));
 
     /* Register the application with Executive Services */
-    TO_AppData.uiRunStatus = CFE_ES_APP_RUN;
+    TO_AppData.runStatus = CFE_ES_APP_RUN;
 
-    int32 iStatus = CFE_ES_RegisterApp();
-    if (iStatus != CFE_SUCCESS)
+    status = CFE_ES_RegisterApp();
+    if (status != CFE_SUCCESS)
     {
-        (void) CFE_ES_WriteToSysLog("TO - Failed to register the app (0x%08X)\n", (unsigned int)iStatus);
+        (void) CFE_ES_WriteToSysLog("TO - Failed to register the app (0x%08X)\n", (unsigned int)status);
     }
 
     /* Start Performance Log entry */
     CFE_ES_PerfLogEntry(TO_MAIN_TASK_PERF_ID);
 
     /* Perform application initializations */
-    if (iStatus == CFE_SUCCESS)
+    if (CFE_SUCCESS == status)
     {
-        iStatus = TO_InitApp();
+        status = TO_InitApp();
     }
 
-    if (iStatus == CFE_SUCCESS)
+    if (CFE_SUCCESS == status)
     {
         /* Do not perform performance monitoring on startup sync */
         CFE_ES_PerfLogExit(TO_MAIN_TASK_PERF_ID);
@@ -896,16 +1098,18 @@ void TO_AppMain()
     }
     else
     {
-        TO_AppData.uiRunStatus = CFE_ES_APP_ERROR;
+        TO_AppData.runStatus = CFE_ES_APP_ERROR;
     }
 
     /* Application main loop */
-    while (CFE_ES_RunLoop(&TO_AppData.uiRunStatus) == TRUE)
+    while (CFE_ES_RunLoop(&TO_AppData.runStatus) == TRUE)
     {
-        int32 iStatus = TO_RcvMsg(TO_SCH_PIPE_PEND_TIME);
-        if (iStatus != CFE_SUCCESS)
+        status = TO_RcvMsg(TO_SCH_PIPE_PEND_TIME);
+        if (status != CFE_SUCCESS)
         {
-            /* TODO: Decide what to do for other return values in TO_RcvMsg(). */
+            (void) CFE_EVS_SendEvent(TO_SB_RECEIVE_ERR_EID,
+                                     CFE_EVS_CRITICAL,
+                                    "Main loop error: SB receive: result = 0x%08X", (unsigned int)status);
         }
     }
 
@@ -915,52 +1119,7 @@ void TO_AppMain()
     CFE_ES_PerfLogExit(TO_MAIN_TASK_PERF_ID);
 
     /* Exit the application */
-    CFE_ES_ExitApp(TO_AppData.uiRunStatus);
-}
-
-uint32 TO_ProtobufTlmEncode(CFE_SB_MsgPtr_t MsgInPtr,
-		char *BufferOut, uint32 Size)
-{
-	CFE_SB_MsgId_t  	msgId = 0;
-	uint32  			msgSize = 0;
-	uint16  			outSize = 0;
-	uint32  			hdrSize = 0;
-	uint32  			payloadSize = 0;
-	PBLib_EncodeFuncPtr_t encodeFunc;
-
-	/* Get required params */
-	msgId = CFE_SB_GetMsgId(MsgInPtr);
-	payloadSize = CFE_SB_GetUserDataLength(MsgInPtr); //change to user data length
-	hdrSize = CFE_SB_MsgHdrSize(msgId);
-
-	/* Get serialization funciton from PBL */
-	encodeFunc = PBLIB_GetTlmSerializationFunc(msgId);
-	if(encodeFunc == 0)
-	{
-		CFE_EVS_SendEvent (TO_NO_ENCODE_FUNC_EID, CFE_EVS_ERROR, "MsgId (0x%04X) has no serialization function",
-									msgId);
-		outSize = 0;
-		goto TO_ProtobufEncode_Exit_Tag;
-	}
-
-	/* Call encode function */
-	payloadSize = encodeFunc(MsgInPtr, &BufferOut[hdrSize], Size - hdrSize);
-	outSize = hdrSize + payloadSize;
-
-	/* Create new SB msg from serialized data */
-	CFE_SB_InitMsg(BufferOut, msgId, outSize, FALSE);
-
-	/* Update header info */
-	CFE_SB_GenerateChecksum((CFE_SB_MsgPtr_t)BufferOut);
-
-TO_ProtobufEncode_Exit_Tag:
-	return outSize;
-}
-
-
-TO_ChannelType_t TO_GetChannelType(uint32 ChannelID)
-{
-	return TO_AppData.ChannelData[ChannelID].ConfigTblPtr->ChannelType;
+    CFE_ES_ExitApp(TO_AppData.runStatus);
 }
 
 

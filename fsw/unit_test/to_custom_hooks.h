@@ -42,12 +42,18 @@ extern "C" {
 
 typedef struct
 {
-    boolean TO_Custom_Init_Use_Hook;
+    osalbool TO_Custom_Init_Use_Hook;
+    osalbool TO_Custom_Init_Use_Hook2;
+    osalbool TO_Custom_Init_Use_Hook3;
+    osalbool TO_Custom_Init_Use_Hook4;
+    osalbool TO_Custom_Init_Use_Hook5;     
 } TO_Custom_Hooks_t;
 
 extern TO_Custom_Hooks_t TO_Custom_Test_Hooks;
 
 int32 TO_Custom_InitHook(void);
+int32 TO_Custom_InitHook4(void);
+int32 TO_Custom_InitHook5(void);
 
 #ifdef __cplusplus
 }

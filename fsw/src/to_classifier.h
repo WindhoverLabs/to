@@ -67,9 +67,14 @@
 **       to the priority queue specified in the configuration table.
 **
 **  \par Assumptions, External Events, and Notes:
-**       This will raise error events as errors are encountered.
+**       There is only one caller of this function and this caller enforces 
+**       that the call will never contain a null pointer, therefore 
+**       the null pointer condition is not checked.
+**
+**  \param [in]   channel       A #TO_ChannelData_t pointer that
+**                              references the channel data structure
 **
 *************************************************************************/
-void TO_Classifier_Run(TO_ChannelData_t* channel);
+void TO_Classifier_Run(TO_ChannelData_t *channel);
 
 #endif

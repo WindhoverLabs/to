@@ -31,34 +31,21 @@
 *
 *****************************************************************************/
 
-#include "to_config_tbl_test.h"
-#include "to_test_utils.h"
-
-#include "to_msg.h"
+#ifndef PSP_FSW_UNIT_TESTS_INC_TEST_UTILITIES_H_
+#define PSP_FSW_UNIT_TESTS_INC_TEST_UTILITIES_H_
 
 #include "uttest.h"
-#include "ut_osapi_stubs.h"
-#include "ut_cfe_sb_stubs.h"
-#include "ut_cfe_es_stubs.h"
-#include "ut_cfe_es_hooks.h"
-#include "ut_cfe_evs_stubs.h"
-#include "ut_cfe_evs_hooks.h"
-#include "ut_cfe_time_stubs.h"
-#include "ut_cfe_psp_memutils_stubs.h"
-#include "ut_cfe_tbl_stubs.h"
-#include "ut_cfe_fs_stubs.h"
-#include "ut_cfe_time_stubs.h"
+#include "common_types.h"
 
 
-void TO_Config_Tbl_Test_Case1(void)
-{
 
-}
+#define ADD_TEST(test,setup,teardown) UtTest_Add((test), (setup), (teardown), #test)
 
+#define assert(expression, ...) \
+    UtAssertEx(expression, __FILE__, __LINE__, __VA_ARGS__)
 
-void TO_Config_Tbl_Test_AddTestCases(void)
-{
-    UtTest_Add(TO_Config_Tbl_Test_Case1, TO_Test_Setup_EmptyConfig, TO_Test_TearDown, "TO_Config_Tbl_Test_Case1");
-}
+void UtAssertEx(boolean expression, const char *file, uint32 line, const char *fmt, ...);
 
 
+
+#endif /* PSP_FSW_UNIT_TESTS_INC_TEST_UTILITIES_H_ */

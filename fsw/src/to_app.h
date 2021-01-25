@@ -45,8 +45,6 @@
 
 #include "to_platform_cfg.h"
 #include "to_mission_cfg.h"
-#include "to_private_ids.h"
-#include "to_private_types.h"
 #include "to_perfids.h"
 #include "to_msgids.h"
 #include "to_msg.h"
@@ -68,7 +66,7 @@ extern "C" {
 /************************************************************************
 ** Local Defines
 *************************************************************************/
-
+#define TO_HKTLM_CHANNEL_MUTEX_NAME      ("TO_HK_CH_MUTEX")
 
 /************************************************************************
 ** Local Structure Definitions
@@ -78,44 +76,31 @@ extern "C" {
 */
 typedef struct
 {
-    /* Copy of the last transmitted message. */
-    /* TODO:  Add Doxygen markup */
-    uint32 BufferOut[CFE_SB_MAX_SB_MSG_SIZE/4];
-    uint16 OutMessageSize;
-
-    /** \brief CFE Event Table */
-    CFE_EVS_BinFilter_t  EventTbl[TO_EVT_CNT];
-
-    /**\brief Scheduling Pipe ID */
-    CFE_SB_PipeId_t  SchPipeId;
-
-    /** \brief Command Pipe ID */
-    CFE_SB_PipeId_t  CmdPipeId;
-
     /* Task-related */
-
     /** \brief Task Run Status */
-    uint32  uiRunStatus;
-
-    /* Inputs/Outputs */
-
-    /** \brief Input Data from I/O or other apps */
-    TO_InData_t   InData;
-
-    /** \brief Output Data published at the end of cycle */
-    TO_OutData_t  OutData;
+    uint32                runStatus;
 
     /** \brief Housekeeping Telemetry for downlink */
-    TO_HkTlm_t  HkTlm;
+    TO_HkTlm_t            HkTlm;
 
-    /** \brief Memory pool buffer for queued messages. */
-    uint8		MemPoolBuffer [TO_NUM_BYTES_IN_MEM_POOL];/**< \brief HK mempool buffer */
+    /** \brief Mutex for TO AppData */
+    uint32                MutexID;
 
-    TO_ChannelData_t ChannelData[TO_MAX_CHANNELS];
+    /** \brief Channel Data */
+    TO_ChannelData_t      ChannelData[TO_MAX_CHANNELS];
 
-    uint32 MutexID;
+    /** \brief CFE Event Table */
+    CFE_EVS_BinFilter_t   EventTbl[CFE_EVS_MAX_EVENT_FILTERS];
+    /* CFE_EVS_BinFilter_t is two uint16's */
 
-    /* TODO:  Add declarations for additional private data here */
+    uint16                OutMessageSize;
+
+    /**\brief Scheduling Pipe ID */
+    CFE_SB_PipeId_t       SchPipeId;
+
+    /** \brief Command Pipe ID */
+    CFE_SB_PipeId_t       CmdPipeId;
+
 } TO_AppData_t;
 
 /************************************************************************
@@ -156,21 +141,20 @@ void  TO_AppMain(void);
 **  \par Description
 **       Telemetry Output application initialization routine. This
 **       function performs all the required startup steps to
-**       initialize (or restore from CDS) TO data structures and get
+**       initialize TO data structures and get
 **       the application registered with the cFE services so it can
 **       begin to receive command messages and send events.
 **
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS    \endcode
 **  \retstmt Return codes from #CFE_ES_RegisterApp          \endcode
-**  \retstmt Return codes from #TO_InitEvent               \endcode
-**  \retstmt Return codes from #TO_InitPipe                \endcode
-**  \retstmt Return codes from #TO_InitData                \endcode
-**  \retstmt Return codes from #TO_InitConfigTbl           \endcode
-**  \retstmt Return codes from #TO_InitCdsTbl              \endcode
+**  \retstmt Return codes from #TO_InitEvent                \endcode
+**  \retstmt Return codes from #TO_InitPipe                 \endcode
+**  \retstmt Return codes from #TO_InitData                 \endcode
+**  \retstmt Return codes from #TO_InitTables               \endcode
 **  \retstmt Return codes from #OS_TaskInstallDeleteHandler \endcode
 **  \endreturns
 **
@@ -187,7 +171,7 @@ int32  TO_InitApp(void);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS \endcode
 **  \retstmt Return codes from #CFE_EVS_Register  \endcode
 **  \endreturns
@@ -205,13 +189,14 @@ int32  TO_InitEvent(void);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \return
+**   OSAL error if unsuccessful.
+**
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS \endcode
-**  \retstmt Return codes from #CFE_EVS_Register  \endcode
-**  \endreturns
+**  \retstmt Return codes from #OS_MutSemCreate  \endcode
 **
 *************************************************************************/
-void  TO_InitData(void);
+int32 TO_InitData(void);
 
 /************************************************************************/
 /** \brief Initialize message pipes
@@ -224,7 +209,7 @@ void  TO_InitData(void);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS \endcode
 **  \retstmt Return codes from #CFE_SB_CreatePipe        \endcode
 **  \retstmt Return codes from #CFE_SB_SubscribeEx       \endcode
@@ -233,19 +218,6 @@ void  TO_InitData(void);
 **
 *************************************************************************/
 int32  TO_InitPipe(void);
-
-/************************************************************************/
-/** \brief Telemetry Output Task (TO) cleanup prior to exit
-**
-**  \par Description
-**       This function handles any necessary cleanup prior
-**       to application exit.
-**
-**  \par Assumptions, External Events, and Notes:
-**       None
-**
-*************************************************************************/
-void  TO_CleanupCallback(void);
 
 /************************************************************************/
 /** \brief Receive and process messages
@@ -257,30 +229,16 @@ void  TO_CleanupCallback(void);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \param [in]   iBlocking    A #CFE_SB_PEND_FOREVER, #CFE_SB_POLL or
+**  \param [in]   blocking    A #CFE_SB_PEND_FOREVER, #CFE_SB_POLL or
 **                             millisecond timeout
 **
-**  \returns
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS \endcode
 **  \retstmt Return codes from #CFE_SB_RcvMsg            \endcode
 **  \endreturns
 **
 *************************************************************************/
-int32  TO_RcvMsg(int32 iBlocking);
-
-
-/************************************************************************/
-/** \brief Telemetry Output Task incoming data processing
-**
-**  \par Description
-**       This function processes incoming data subscribed
-**       by TO application
-**
-**  \par Assumptions, External Events, and Notes:
-**       None
-**
-*************************************************************************/
-void  TO_ProcessNewData(void);
+int32  TO_RcvMsg(int32 blocking);
 
 /************************************************************************/
 /** \brief Telemetry Output Task incoming command processing
@@ -305,11 +263,11 @@ void  TO_ProcessNewCmds(void);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \param [in]   MsgPtr       A #CFE_SB_Msg_t pointer that
+**  \param [in]   msgPtr       A #CFE_SB_Msg_t pointer that
 **                             references the software bus message
 **
 *************************************************************************/
-void  TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr);
+void  TO_ProcessNewAppCmds(CFE_SB_Msg_t *msgPtr);
 
 
 /************************************************************************/
@@ -325,69 +283,46 @@ void  TO_ProcessNewAppCmds(CFE_SB_Msg_t* MsgPtr);
 void  TO_ReportHousekeeping(void);
 
 /************************************************************************/
-/** \brief Sends TO output data
-**
-**  \par Description
-**       This function publishes the TO application output data.
-**
-**  \par Assumptions, External Events, and Notes:
-**       None
-**
-*************************************************************************/
-void  TO_SendOutData(void);
-
-/************************************************************************/
 /** \brief Verify Command Length
 **
 **  \par Description
-**       This function verifies the command message length.
+**       This routine will check if the actual length of a software bus
+**       command message matches the expected length and send an
+**       error event message if a mismatch occurs
 **
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \param [in]   MsgPtr        A #CFE_SB_Msg_t pointer that
+**  \param [in]   msgPtr        A #CFE_SB_Msg_t pointer that
 **                              references the software bus message
-**  \param [in]   usExpectedLen The expected length of the message
+
+**  \param [in]   expectedLen The expected length of the message
 **
-**  \returns
-**  TRUE if the message length matches expectations, FALSE if it does not.
-**  \endreturns
+**  \return
+**  \retstmt Returns TRUE if the length is as expected      \endcode
+**  \retstmt Returns FALSE if the length is not as expected \endcode
+**
+**  \sa #TO_MSG_LEN_ERR_EID
 **
 *************************************************************************/
-boolean  TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr, uint16 usExpectedLen);
-
-boolean  TO_SendDiag(uint16 ChannelIdx);
+osalbool  TO_VerifyCmdLength(CFE_SB_Msg_t *msgPtr, uint16 expectedLen);
 
 /************************************************************************/
-/** \brief Encode message with proto buffer (protobuf).
+/** \brief Sends TO Diagnostic Telemetry
 **
 **  \par Description
-**       This function receives a SB message pointer that has a binary
-**       payload and encodes the payload with Google Proto Buffers using
-**       functions provided by the PBLib application.
+**       This function publishes the TO application diagnostics telemetry.
 **
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \param [in]      MsgIn      A #CFE_SB_MsgPtr_t that references the
-**  							original binary encoded software bus
-**  							message.
+**  \param [in]   ChannelIdx Channel index
 **
-**  \param [in/out]  MsgOut     A #CFE_SB_MsgPtr_t that references the
-**                              newly encoded CCSDS message.
+**  \return
+**  TRUE if command is executed without error, FALSE if it does not.
 **
-**  \param [in]      MsgIn      Represents the size of the MsgOut buffer
-**                              passed to it.  This ensures the function
-**                              does not exceed the size of buffer.
-**
-**  \returns
-**  #uint32 The size of the output message in bytes.
-**  \endreturns
 *************************************************************************/
-uint32 TO_ProtobufTlmEncode(CFE_SB_MsgPtr_t MsgInPtr,
-		char *Buffer, uint32 Size);
-
-TO_ChannelType_t TO_GetChannelType(uint32 ChannelID);
+osalbool  TO_SendDiag(uint16 ChannelIdx);
 
 void TO_Cleanup(void);
 

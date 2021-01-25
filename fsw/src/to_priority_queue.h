@@ -48,7 +48,34 @@
 ** Local Defines
 *************************************************************************/
 
-typedef struct TO_ChannelData_t TO_ChannelData_t;
+typedef struct TO_ChannelData_t TO_ChannelData;
+
+/**
+ * \brief The priority queue is missing.
+ */
+#define TO_NO_PRIORITY_QUEUE_ERR     (-2)
+
+/**
+ * \brief The table data for channel is missing.
+ */
+#define TO_NO_TABLE_ERR              (-4)
+
+/**
+ * \brief The message was not queued because the priority queue was full.
+ */
+#define TO_PRIORITY_QUEUE_FULL_ERR   (-5)
+
+/**
+ * \brief The message was not queued because the caller could not get
+ *        enough memory from the memory pool.
+ */
+#define TO_MEMORY_FULL_ERR           (-6)
+
+/** 
+ * \brief Function received a null channel pointer. 
+ */
+#define TO_CHANNEL_PTR_NULL          (-7)
+
 
 /************************************************************************
 ** Local Structure Definitions
@@ -59,43 +86,78 @@ typedef struct TO_ChannelData_t TO_ChannelData_t;
 */
 typedef enum
 {
-	TO_PQUEUE_UNUSED = 0,
-	TO_PQUEUE_ENA = 1,
+    /** \brief Priority Queue Unused state */
+    TO_PQUEUE_UNUSED = 0,
+    
+    /** \brief Priority Queue Enabled state */
+    TO_PQUEUE_ENA    = 1,
+
+    /** \brief  This is a count of Priority Queue states and should not be used.  */
+    TO_PQUEUE_COUNT
+
 } TO_PriorityQueueState_t;
 
 /**
-** \brief Priority queue type.  'FIFO' queues are normal FIFO queues, but 'SINGLE' queues have the message flow removed after a message is pushed onto the queue.
+** \brief Priority queue type.
 */
 typedef enum
 {
-	TO_PRIORITY_QUEUE_TYPE_FIFO = 0,
-	TO_PRIORITY_QUEUE_TYPE_SINGLE,
+    /** \brief 'FIFO' queues are normal FIFO queues. */
+    TO_PRIORITY_QUEUE_TYPE_FIFO = 0,
+
+    /** \brief 'SINGLE' queues are currently unused. */
+    TO_PRIORITY_QUEUE_TYPE_SINGLE = 1,
+
+    /** \brief This is a count of Priority Queue types and should not be used.  */
+    TO_PRIORITY_QUEUE_TYPE_COUNT,
+
 } TO_PriorityQueueType_t;
 
 
 /** \brief Definition for a single priority queue entry. */
 typedef struct
 {
-	TO_PriorityQueueState_t State;
-	uint16					MsgLimit;
-	TO_PriorityQueueType_t  QType;
-} TO_PriorityQueue_t;
+    /** \brief Priority Queue State (unused or enabled) */
+    uint8  State;
+    
+    /** \brief Priority Queue Message Limit.  */
+    uint16 MsgLimit;
+    
+    /** \brief Priority Queue Type (only one type - FIFO) */
+    TO_PriorityQueueType_t  QType;
 
+} TO_PriorityQueue_t                 OS_ALIGN(2);
+
+/** \brief Definition for Priority Queue Metrics */
 typedef struct
 {
-	uint16					DroppedMsgCnt;
-    uint16					QueuedMsgCnt;
-    uint16					CurrentlyQueuedCnt;
-    uint16					HighwaterMark;
-    uint32					OSALQueueID;
+    /** \brief Priority Queue Dropped Message Count */
+    uint32 DroppedMsgCnt;
+    
+    /** \brief Priority Queue Queued Message Count */
+    uint32 QueuedMsgCnt;
+    
+    /** \brief Priority Queue Passed (not filtered) Message Count */
+    uint32 PassCnt;
+    
+    /** \brief Priority Queue Filtered (not sent/passed) Message Count */
+    uint32 FilteredCnt;
+    
+    /** \brief Priority Queue Currently Queued Message Count */     
+    uint16 CurrentlyQueuedCnt;
+    
+    /** \brief Priority Queue Highest recorded the Queued Message Count */
+    uint16 HighwaterMark;
+    
+    /** \brief Priority Queue Queue ID  */ 
+    uint32 OSALQueueID;
+    
 } TO_PriorityQueueMetrics_t;
-
 
 
 /************************************************************************
 ** External Global Variables
 *************************************************************************/
-
 
 
 /************************************************************************/
@@ -106,21 +168,11 @@ typedef struct
 **       It resets all metrics, which include the Dropped Message Counts,
 **       and Queued Message Counts.
 **
-*************************************************************************/
-void TO_PriorityQueue_ResetCountsAll(TO_ChannelData_t* channel);
-
-
-
-/************************************************************************/
-/** \brief Cleanup all PRIORITY QUEUES.
-**
-**  \par Description
-**       This function is call at application termination and empties
-**       the queue, deallocating each message its popped off the queue.
+**  \param [in]   channel       A #TO_ChannelData_t pointer that
+**                              references the channel data structure
 **
 *************************************************************************/
-void TO_PriorityQueue_CleanupAll(TO_ChannelData_t* channel);
-
+void TO_PriorityQueue_ResetCountsAll(TO_ChannelData *channel);
 
 
 /************************************************************************/
@@ -130,14 +182,15 @@ void TO_PriorityQueue_CleanupAll(TO_ChannelData_t* channel);
 **       This function is called at when the application has loaded a new
 **       configuration table.
 **
-**  \returns
-**  0 if no error occurred.  On error, an OSAL error is returned
-**  indicating what error occured.
-**  \endreturns
+**  \param [in]   channel       A #TO_ChannelData_t pointer that
+**                              references the channel data structure
+**
+**  \return
+**  CFE_SUCCESS if no error occurred.  On error, a TO error or an OSAL error 
+**  is returned indicating what error occured.
 **
 *************************************************************************/
-int32 TO_PriorityQueue_BuildupAll(TO_ChannelData_t* channel);
-
+int32 TO_PriorityQueue_BuildupAll(TO_ChannelData *channel);
 
 
 /************************************************************************/
@@ -159,7 +212,7 @@ int32 TO_PriorityQueue_BuildupAll(TO_ChannelData_t* channel);
 **  \endreturns
 **
 *************************************************************************/
-int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPtr, uint32 PQueueIndex);
+int32 TO_PriorityQueue_QueueMsg(TO_ChannelData *channel, CFE_SB_MsgPtr_t MsgPtr, uint32 PQueueIndex);
 
 
 
@@ -171,12 +224,14 @@ int32 TO_PriorityQueue_QueueMsg(TO_ChannelData_t *channel, CFE_SB_MsgPtr_t MsgPt
 **       a new configuration table.  This will flush the queues and
 **       deallocate the messages contained in the queues.
 **
-**  \returns
+**  \param [in]   channel       A #TO_ChannelData_t pointer that
+**                              references the channel data structure
+**
+**  \return
 **  0 if successful.  OSAL error if unsuccessful.
-**  \endreturns
 **
 *************************************************************************/
-int32 TO_PriorityQueue_TeardownAll(TO_ChannelData_t* channel);
+int32 TO_PriorityQueue_TeardownAll(TO_ChannelData *channel);
 
 
 
@@ -189,15 +244,15 @@ int32 TO_PriorityQueue_TeardownAll(TO_ChannelData_t* channel);
 **       text format:
 **       "PQI=<PQueueIndex> CI=<ChannelID> S=<State> ML=<MsgLimit> QT=<QueueType> D=<DroppedMsgCnt> Q=<QueuedMsgCnt> CQ=<CurrentlyQueuedCnt> HWM=<HighwaterMark>"
 **
+**  \param [in]   ChannelIdx    Index for a given channel
+**
 **  \param [in]   PQueueIdx     Index of the priority queue.
 **
-**  \returns
+**  \return
 **  TRUE if priority queue is found.  FALSE if not found.
-**  \endreturns
 **
 *************************************************************************/
-boolean TO_PriorityQueue_Query(uint16 ChannelIdx, uint16 PQueueIdx);
-
+osalbool TO_PriorityQueue_Query(uint16 ChannelIdx, uint16 PQueueIdx);
 
 
 /************************************************************************/
@@ -207,14 +262,16 @@ boolean TO_PriorityQueue_Query(uint16 ChannelIdx, uint16 PQueueIdx);
 **       This function is used internally to determine if an index is
 **       to a valid priority queue.
 **
+**  \param [in]   channel       A #TO_ChannelData_t pointer that
+**                              references the channel data structure
+**
 **  \param [in]   PQueueIdx     Index of the priority queue.
 **
-**  \returns
+**  \return
 **  TRUE if priority queue is valid.  FALSE if not.
-**  \endreturns
 **
 *************************************************************************/
-boolean TO_PriorityQueue_IsValid(TO_ChannelData_t* channel, uint32 PQueueIdx);
+osalbool TO_PriorityQueue_IsValid(TO_ChannelData *channel, uint32 PQueueIdx);
 
 
 #endif

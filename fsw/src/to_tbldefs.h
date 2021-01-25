@@ -60,52 +60,125 @@ extern "C" {
  */
 #define TO_CONFIG_TABLE_MAX_ENTRIES  (1)
 
+/**
+ * \brief Defines the error return codes for table validation
+ */
+#define TO_CONFIG_TABLE_RETURN_INVALID_VERSION        (-50)
+#define TO_CONFIG_TABLE_RETURN_NO_SECONDARY_HEADER    (-51)
+#define TO_CONFIG_TABLE_MSG_FLOW_MSG_LIMIT_ERR        (-52)
+#define TO_CONFIG_TABLE_MSG_FLOW_PQ_ID_ERR            (-53)
+#define TO_CONFIG_TABLE_NULL_PTR_ERR                  (-54)
+#define TO_CONFIG_TABLE_PQUEUE_STATE_ERR              (-55)
+#define TO_CONFIG_TABLE_PQUEUE_QTYPE_ERR              (-56)
+#define TO_CONFIG_TABLE_PQUEUE_MSG_LIMIT_ERR          (-57)
+#define TO_CONFIG_TABLE_NO_PQUEUES_ERR                (-58)
+#define TO_CONFIG_TABLE_MSG_FLOW_FILTER_ERR           (-59)
+#define TO_CONFIG_TABLE_QUEUE_ERR                     (-60)
+
 
 /************************************************************************
 ** Local Structure Declarations
 *************************************************************************/
 
-
-typedef enum
-{
-	TO_OUTPUT_TYPE_BINARY	= 0,
-	TO_OUTPUT_TYPE_PROTOBUF	= 1
-} TO_ChannelType_t;
-
-/* TODO:  Add doxygen markup. */
-/* Definition for config table entry */
+/** \totbl TO Configuration Table 
+ *
+ * \brief Definition for a TO Configuration table 
+ */
 typedef struct
 {
-	uint16					TableID;
-	TO_ChannelType_t		ChannelType;
-	TO_MessageFlow_t	    MessageFlow[TO_MAX_MESSAGE_FLOWS];
-	TO_PriorityQueue_t      PriorityQueue[TO_MAX_PRIORITY_QUEUES];
+    /**
+     * \brief  The table identifier, used to identify a specific config table.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: must be greater than or equal to 0
+     *
+     * \par
+     * Note: TableID value 0xFFFFFFFF is reserved for each channel's 
+     * backup emergency table.  The backup emergency tables are loaded
+     * when the channel's table file could not be loaded.
+     * It is the largest uint32 available 4294967295.     
+     */
+    uint32                       TableID;
+
+    /**
+     * \brief  MessageFlow defines a single telemetry message flow entry.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: The maximum number of message flows is defined in to_mission_cfg.h
+     */
+    TO_MessageFlow_t             MessageFlow[TO_MAX_MESSAGE_FLOWS];
+
+    /**
+     * \brief  The Priority Queue defines a single priority queue entry.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: The maximum number of priority queues is defined in to_mission_cfg.h
+     */
+    TO_PriorityQueue_t           PriorityQueue[TO_MAX_PRIORITY_QUEUES];
+
 } TO_ChannelTbl_t;
 
+
+/** \brief Definition for a single TO dump table entry */
 typedef struct
 {
-	uint16	TableID;
+    /**
+     * \brief  The table identifier, used to identify a specific dump table.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: must be greater than or equal to 0
+     */
+    uint16                       TableID;
 
-	TO_MessageFlowMetrics_t	  MessageFlow[TO_MAX_MESSAGE_FLOWS];
-	TO_PriorityQueueMetrics_t PriorityQueue[TO_MAX_PRIORITY_QUEUES];
-	TO_OutputQueue_t    	  OutputQueue;
+    /**
+     * \brief  This MessageFlow is a structure which defines the message flow metrics
+     *  to be collected.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: TO_MAX_QUEUE_SIZE_LIMIT.
+     */
+    TO_MessageFlowMetrics_t      MessageFlow[TO_MAX_MESSAGE_FLOWS];
+
+    /**
+     * \brief  This PriorityQueue is a structure which defines the priority queue metrics
+     *  to be collected.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: TO_MAX_PRIORITY_QUEUES
+     */
+    TO_PriorityQueueMetrics_t    PriorityQueue[TO_MAX_PRIORITY_QUEUES];
+
+    /**
+     * \brief  This OutputQueue is a structure which defines the output queue metrics
+     *  to be collected.
+     *
+     * \par
+     * Units: none.
+     *
+     * \par
+     * Limits: none.
+     */
+    TO_OutputQueue_t             OutputQueue;
+
 } TO_ChannelDumpTbl_t;
-
-/************************************************************************
-** External Global Variables
-*************************************************************************/
-
-/************************************************************************
-** Global Variables
-*************************************************************************/
-
-/************************************************************************
-** Local Variables
-*************************************************************************/
-
-/************************************************************************
-** Local Function Prototypes
-*************************************************************************/
 
 
 #ifdef __cplusplus

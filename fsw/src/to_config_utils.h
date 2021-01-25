@@ -73,40 +73,56 @@ extern "C" {
 ** Local Function Prototypes
 *************************************************************************/
 
+
 /************************************************************************/
-/** \brief Init TO Config table
+/** \brief Init TO configuration and dump tables for a channel
 **
 **  \par Description
-**       This function initializes TO's Config table
+**       This function initializes the two tables for a channel
 **
 **  \par Assumptions, External Events, and Notes:
-**       None
+**       This function should be called only once per channel.
 **
-**  \returns
+**
+**  \param   channel    A #TO_ChannelData_t pointer that 
+**                      references the channel data structure
+**
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS  \endcode
 **  \retstmt Return codes from #CFE_TBL_Register          \endcode
 **  \retstmt Return codes from #CFE_TBL_Load              \endcode
-**  \retstmt Return codes from #TO_AcquireConfigPointers \endcode
-**  \endreturns
+**  \retstmt Return codes from #TO_AcquireConfigPointer   \endcode
 **
 *************************************************************************/
-int32  TO_InitConfigTbl();
+int32  TO_InitTables(TO_ChannelData_t *channel);
+
 
 /************************************************************************/
-/** \brief Validate TO Config table
+/** \brief Validate TO Configuration table
 **
 **  \par Description
-**       This function validates TO's Config table
+**       This function validates TO's Configuration table
 **
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \param   configTblPtr  Pointer to config table data from cFE table services
+**
+**  \param   tableType     A #TO_Table_Types_t enum
+**
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS  \endcode
-**  \endreturns
+**  If unsuccessful, 
+**  #TO_CONFIG_TABLE_RETURN_INVALID_VERSION, #TO_CONFIG_TABLE_RETURN_NO_SECONDARY_HEADER, 
+**  #TO_CONFIG_TABLE_MSG_FLOW_MSG_LIMIT_ERR, #TO_CONFIG_TABLE_MSG_FLOW_PQ_ID_ERR,
+**  #TO_CONFIG_TABLE_NULL_PTR_ERR, #TO_CONFIG_TABLE_PQUEUE_STATE_ERR,
+**  #TO_CONFIG_TABLE_PQUEUE_QTYPE_ERR, #TO_CONFIG_TABLE_PQUEUE_MSG_LIMIT_ERR 
+**  #TO_CONFIG_TABLE_NO_PQUEUES_ERR, #TO_CONFIG_TABLE_MSG_FLOW_FILTER_ERR, 
+**  #TO_CONFIG_TABLE_QUEUE_ERR, #TO_CONFIG_TABLE_ANOMALY_BUFFER_ERR.
 **
 *************************************************************************/
-int32  TO_ValidateConfigTbl(void*);
+int32  TO_ValidateConfigTbl(void *configTblPtr);
+
 
 /************************************************************************/
 /** \brief Obtain TO Config Table Data Pointer
@@ -118,12 +134,15 @@ int32  TO_ValidateConfigTbl(void*);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \param   channel    A #TO_ChannelData_t pointer that 
+**                      references the channel data structure
+**
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS  \endcode
-**  \endreturns
 **
 *************************************************************************/
 int32 TO_AcquireConfigPointer(TO_ChannelData_t *channel);
+
 
 /************************************************************************/
 /** \brief Process new TO Config table
@@ -135,15 +154,87 @@ int32 TO_AcquireConfigPointer(TO_ChannelData_t *channel);
 **  \par Assumptions, External Events, and Notes:
 **       None
 **
-**  \returns
+**  \param   channel    A #TO_ChannelData_t pointer that 
+**                      references the channel data structure
+**  \return
 **  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS  \endcode
-**  \endreturns
 **
 *************************************************************************/
-int32 TO_ProcessNewConfigTbl(TO_ChannelData_t* channel);
+int32 TO_ProcessNewConfigTbl(TO_ChannelData_t *channel);
 
-void TO_ReleaseAllTables(void);
-void TO_AcquireAllTables(void);
+
+/************************************************************************/
+/** \brief Intermediate function to add a TO table type to allow
+**         table validation per channel type (Ground, Onboard, Storage)
+**         This function is used to help validate the Ground channel 
+**         table.
+**
+**  \par Description
+**       This function add channel type to be pass to validation function.
+**
+**  \par Assumptions, External Events, and Notes:
+**       None
+**
+**  \param   configTblPtr  Pointer to config table data from cFE table services
+**
+**  \return
+**  \retcode #CFE_SUCCESS  \retdesc \copydoc CFE_SUCCESS  \endcode
+**
+*************************************************************************/
+int32 TO_ValidateConfigGrndTbl(void *configTblPtr);
+
+
+
+/************************************************************************/
+/** \brief This manages all the tables in the app
+**
+**  \par Description
+**       This function performs the table management for each channel's
+**       dump and configuration tables with cFE table services.
+**
+**  \par Assumptions, External Events, and Notes:
+**       All tables have been initialized via TO_InitCoinfigTbl().
+**       This is called during app cyclic operations.
+**
+*************************************************************************/
+void TO_ManageAllAppTables(void);
+
+
+/************************************************************************/
+/** \brief This manages all the tables for a given channel
+**
+**  \par Description
+**       This function performs the table management for a channel's
+**       dump and configuration tables with cFE table services.
+**
+**  \par Assumptions, External Events, and Notes:
+**       All channel tables have been initialized via TO_InitCoinfigTbl().
+**
+**  \param initialManage T=this is the first time to call this function 
+**             at app initialization, F=this is being called in the app main loop
+**
+**  \param ChannelID The index of the channel to manage
+**
+*************************************************************************/
+void TO_ManageChannelTables(osalbool initialManage, uint16 ChannelID);
+
+
+/************************************************************************/
+/** \brief Load the backup config table
+**
+**  \par Description
+**       This function loads the built-in emergency backup TO config table.
+**       For use when the config table can't be provided by cFE TBL, such as
+**       the config file can't be read from the filesystem.
+**
+**  \par Assumptions, External Events, and Notes:
+**       None
+**
+**  \param   channel    A #TO_ChannelData_t pointer that 
+**                      references the channel data structure
+**
+*************************************************************************/
+void TO_LoadBackupConfigTable(TO_ChannelData_t *channel);
 
 
 #ifdef __cplusplus

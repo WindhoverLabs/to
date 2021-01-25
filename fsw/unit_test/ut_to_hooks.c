@@ -31,19 +31,55 @@
 *
 *****************************************************************************/
 
-#include "uttest.h"
+#include "ut_to_hooks.h"
 
-#include "to_app_test.h"
-//#include "to_cmds_test.h"
-//#include "to_config_tbl_test.h"
+uint8  Ut_TO_Channel_State(uint8 index)
+{
+    return 0;
+}
 
-int main(void)
-{   
-    TO_App_Test_AddTestCases();
-//    TO_Cmds_Test_AddTestCases();
-//    TO_Config_Tbl_Test_AddTestCases();
 
-    return(UtTest_Run());
+osalbool Ut_TO_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr,
+                           uint16 usExpectedLen)
+{
+    return TRUE;
+}
+
+
+void  Ut_TO_Channel_LockByIndex(uint8 index)
+{
 
 }
 
+
+void  Ut_TO_Channel_UnlockByIndex(uint8 index)
+{
+
+}
+
+
+void  Ut_TO_Channel_LockByRef(TO_ChannelData_t *channel)
+{
+
+}
+
+
+void  Ut_TO_Channel_UnlockByRef(TO_ChannelData_t *channel)
+{
+
+}
+
+
+TO_MessageFlow_t* Ut_TO_MessageFlow_GetObject(TO_ChannelData_t* channel, CFE_SB_MsgId_t MsgID, uint32 *Index)
+{
+    return 0;
+}
+
+
+int32 Ut_TO_Channel_OpenChannel(const uint32 index, const char *ChannelName,
+        const char *ConfigTableName, const char *ConfigTableFileName, TO_ChannelTbl_t *BackupTbl,
+        const char *DumpTableName, const uint32 CfCntSemMax, const char *CfCntSemName)
+{
+    return -1;
+
+}

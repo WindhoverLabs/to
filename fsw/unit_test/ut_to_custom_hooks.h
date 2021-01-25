@@ -31,17 +31,20 @@
 *
 *****************************************************************************/
 
-#include "../../../pblib/fsw/public_inc/pb_lib.h"
+#include "cfe.h"
 
-int PBLIB_RET_CODE = 0;
+#include "to_channel.h"
 
-PBLib_DecodeFuncPtr_t __wrap_PBLIB_GetTlmSerializationFunc(CFE_SB_MsgId_t msgId)
-{
-	if(PBLIB_RET_CODE == 0)
-	{
-		return 0;
-	}
-
-	return (PBLib_DecodeFuncPtr_t)0;
-}
-
+int32  Ut_TO_Custom_Init(void);
+int32  Ut_TO_Custom_InitEvent(int32 ind);
+int32  Ut_TO_OutputChannel_CustomBuildup(uint32 index);
+int32  Ut_TO_OutputChannel_CustomTeardown(uint32 index);
+void   Ut_TO_OutputChannel_CustomCleanupAll(void);
+void   Ut_TO_OutputChannel_ProcessNewCustomCmds(CFE_SB_Msg_t* MsgPtr);
+uint8  Ut_TO_OutputChannel_Status(uint32 index);
+uint32 Ut_TO_GetCustomVersion(void);
+void   Ut_TO_PrintCustomVersion(void);
+void   Ut_TO_ResetCustomChannelCounters(void);
+void   Ut_TO_UpdateCustomDataFromTable(uint16 ChannelID,
+                                  osalbool sendEvent,
+                                  osalbool abandonCurrentMsg);

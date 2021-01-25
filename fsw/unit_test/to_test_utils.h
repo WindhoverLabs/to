@@ -52,10 +52,13 @@ extern "C" {
 
 void TO_Test_Setup_NoConfig(void);
 void TO_Test_Setup_EmptyConfig(void);
+void TO_Test_Setup_NoPQueueConfig(void);
 void TO_Test_Setup_FullConfig1(void);
 void TO_Test_Setup_FullConfig2(void);
 //void TO_Test_Setup_InvalidConfig(void);
 void TO_Test_TearDown(void);
+void TO_Test_Setup_FullConfig6(void); /* Almost full TO Config table 143 message flows */
+void TO_Test_Setup_FullConfig7(void); /* Full TO Config table 144 message flows */
 
 
 #ifdef __cplusplus
