@@ -70,7 +70,7 @@ buildliner_add_app_def(to
 )
 
 
-buildliner_add_app_def(to-ut
+buildliner_add_app_unit_test(to-ut
     UTASSERT 
     NO_HELGRIND
     NO_MASSIF
@@ -118,7 +118,7 @@ buildliner_add_app_def(to-ut
 )
 
 
-buildliner_add_app_def(to-unreachable-code-ut
+buildliner_add_app_unit_test(to-unreachable-code-ut
     UTASSERT 
     NO_HELGRIND
     NO_MASSIF
